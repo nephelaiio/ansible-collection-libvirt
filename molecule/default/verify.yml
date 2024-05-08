@@ -1,0 +1,153 @@
+---
+- name: Verify KVM guests
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - ../../playbooks/vars.yml
+  tasks:
+    - name: Verify KVM guest attributes
+      block:
+        - name: Filter platform facts
+          ansible.builtin.set_fact:
+            _platform: "{{ _platforms | selectattr('name', 'equalto', inventory_hostname) }}"
+          vars:
+            _from_json: 'ansible.builtin.from_json'
+            _format: 'nephelaiio.plugins.map_format'
+            _indices: "{{ range(_libvirt_platforms | length) | map(_format, '{ \"index\": \"%s\" }') | map(_from_json) }}"
+            _platforms: "{{ _libvirt_platforms | zip(_indices) | map('ansible.builtin.combine') }}"
+
+        - name: Check platform
+          ansible.builtin.assert:
+            that: _platform | length == 1
+
+        - name: Set platform facts
+          ansible.builtin.set_fact:
+            _guest_image: "{{ _guest.image }}"
+            _guest_name: "{{ _guest.name }}"
+            _guest_cpu: "{{ _guest.cpu | default(2) }}"
+            _guest_mem: "{{ _guest.mem | default(2) }}"
+            _guest_index: "{{ _guest.index }}"
+            _guest_disk: "{{ _libvirt_path }}/{{ _guest.name }}.img"
+            _guest_nbddisk: "{{ _libvirt_guestdir }}/{{ _guest.name }}.raw"
+            _guest_nbddev: "/dev/nbd{{ _guest.index }}"
+            _guest_nbddir: "{{ _libvirt_guestdir }}/{{ _guest.name }}"
+          vars:
+            _guest: "{{ _platform | first }}"
+
+        - name: Gather facts
+          ansible.builtin.setup:
+          ignore_unreachable: true
+          register: _setup
+
+        - name: Check guest status
+          ansible.builtin.assert:
+            that: _unreachable not in _setup
+            fail_msg: "Host is unreachable"
+          vars:
+            _unreachable: unreachable
+
+        - name: Check guest attributes
+          ansible.builtin.assert:
+            that:
+              - ansible_processor_nproc == (_guest_cpu | int)
+              - (_memtotal_gb | int) == (_guest_mem | int)
+            fail_msg: |
+              Expected {{ _guest_cpu }} processors, got {{ ansible_processor_nproc }}
+              Expected {{ _guest_mem }}GB memory, got {{ _memtotal_gb }}GB
+          vars:
+            _memtotal_gb: "{{ (ansible_memtotal_mb / 1024) | round | int }}"
+
+      always:
+        - name: Collect install logs
+          delegate_to: localhost
+          become: true
+          block:
+            - name: Create logdir
+              ansible.builtin.file:
+                path: "{{ _libvirt_logdir }}"
+                state: directory
+                owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
+                mode: 0750
+
+            - name: Load NBD module
+              community.general.modprobe:
+                name: nbd
+                state: present
+
+            - name: Create NBD mount directory
+              ansible.builtin.file:
+                path: "{{ _guest_nbddir }}"
+                state: directory
+                owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
+                mode: 0755
+
+            - name: Disconnect disk image from NBD device
+              ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
+
+            - name: Stop KVM guest
+              ansible.builtin.command: "virsh destroy {{ _guest_name }}"
+
+            - name: Convert NBD disk image to raw format
+              ansible.builtin.command: "qemu-img convert -O raw {{ _guest_disk }} {{ _guest_nbddisk }}"
+              become: false
+
+            - name: Start KVM guest
+              ansible.builtin.command: "virsh start {{ _guest_name }}"
+
+            - name: Connect disk image to NBD device
+              ansible.builtin.command: "qemu-nbd --format raw --connect {{ _guest_nbddev }} {{ _guest_nbddisk }}"
+
+            - name: Query NBD disk info
+              ansible.builtin.command: "sfdisk --json {{ _guest_nbddev }}"
+              register: _guest_fdisk
+
+            - name: Set debug facts
+              ansible.builtin.set_fact:
+                _nbd_partitions: "{{ _partitions }}"
+                _nbd_partition: "{{ _partitions | sort(attribute='size') | last }}"
+              vars:
+                _data: "{{ _guest_fdisk.stdout | from_json }}"
+                _partitions: "{{ _data.partitiontable.partitions }}"
+
+            - name: Debug NBD disk info
+              ansible.builtin.debug:
+                var: _nbd_partitions
+
+            - name: Mount guest NBD image file
+              ansible.posix.mount:
+                path: "{{ _guest_nbddir }}"
+                src: "{{ _nbd_partition.node }}"
+                fstype: ext4
+                state: ephemeral
+
+            - name: Debug NBD mount location
+              ansible.builtin.debug:
+                msg: "Mounted NBD partition at {{ _guest_nbddir }}"
+
+            - name: Copy cloud-init log
+              ansible.builtin.copy:
+                src: "{{ _guest_nbddir }}/{{ item.src }}"
+                dest: "{{ _libvirt_logdir }}/{{ _guest_name }}.{{ item.dest }}"
+                remote_src: true
+                mode: 0666
+              loop:
+                - src: var/lib/cloud/data/status.json
+                  dest: cloud-init.status.json
+                - src: var/log/cloud-init.log
+                  dest: cloud-init.log
+                - src: "var/lib/cloud/instances/{{ _guest_name }}/cloud-config.txt"
+                  dest: cloud-config.txt
+                - src: "var/lib/cloud/instances/{{ _guest_name }}/user-data.txt"
+                  dest: user-data.txt
+
+            - name: Debug cloud-init log location
+              ansible.builtin.debug:
+                msg: "Installation logs for {{ _guest_name }} available at {{ _libvirt_logdir }}"
+
+            - name: Unmount guest NBD image file
+              ansible.posix.mount:
+                path: "{{ _guest_nbddir }}"
+                state: unmounted
+
+            - name: Disconnect disk image from NBD device
+              ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"

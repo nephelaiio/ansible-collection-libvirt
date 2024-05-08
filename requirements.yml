@@ -1,0 +1,7 @@
+---
+roles: []
+collections:
+  - name: nephelaiio.libvirt
+    source: .
+    type: dir
+  - name: nephelaiio.plugins

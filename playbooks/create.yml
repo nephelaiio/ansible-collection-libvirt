@@ -1,0 +1,351 @@
+---
+- name: Prepare guest nodes
+  ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
+
+
+- name: Configure guests
+  hosts: "{{ _libvirt_group }}"
+  become: true
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Verify required parameters
+      ansible.builtin.assert:
+        that:
+          - _libvirt_network is defined
+          - _libvirt_address is defined
+
+    - name: Debug vardefs
+      ansible.builtin.debug:
+        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') }}"
+      vars:
+        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True)  }}"
+        _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
+
+    - name: Query libvirt pools
+      community.libvirt.virt_pool:
+        command: list_pools
+      register: _pools
+
+    - name: Create libvirt path
+      ansible.builtin.file:
+        path: "{{ _libvirt_path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      become: true
+
+    - name: Define libvirt pool
+      community.libvirt.virt_pool:
+        command: define
+        name: "{{ _libvirt_pool }}"
+        xml: "{{ lookup('ansible.builtin.template', 'pool.j2.xml') }}"
+      vars:
+        _pool: "{{ _libvirt_pool }}"
+        _path: "{{ _libvirt_path }}"
+
+    - name: Activate libvirt pool
+      community.libvirt.virt_pool:
+        state: active
+        name: "{{ _libvirt_pool }}"
+
+    - name: Add libvirt network
+      community.libvirt.virt_net:
+        command: define
+        name: "{{ _libvirt_network }}"
+        xml: "{{ lookup('ansible.builtin.template', 'network.j2.xml') }}"
+      vars:
+        _network: "{{ _libvirt_network }}"
+        _address: "{{ _libvirt_address }}"
+        _dhcp: "{{ _libvirt_dhcp }}"
+        _net_address: "{{ _address | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+        _net_mask: "{{ _address | ansible.utils.ipaddr('netmask') }}"
+        _net_dhcp_start: "{{ _dhcp | ansible.utils.ipaddr('2') | ansible.utils.ipaddr('address') }}"
+        _net_dhcp_end: "{{ _dhcp | ansible.utils.ipaddr('-2') | ansible.utils.ipaddr('address') }}"
+      when: _libvirt_network != "default"
+
+    - name: Start libvirt network
+      community.libvirt.virt_net:
+        command: create
+        name: "{{ _libvirt_network }}"
+      when: _libvirt_network != "default"
+
+    - name: List cached images
+      ansible.builtin.find:
+        paths: "{{ _libvirt_path }}"
+        recurse: false
+      register: _cache_query
+
+    - name: Cache platform images
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.path }}"
+        owner: root
+        group: root
+        mode: 0600
+      vars:
+        _platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
+        _platform_image_urls: "{{ _libvirt_platforms | map(attribute='image') | unique }}"
+        _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
+        _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
+        _platform_image_tuples: "{{ (['url'] | zip(_platform_image_urls)) | zip(['path'] | zip(_platform_image_paths)) }}"
+        _platform_image_data: "{{ _platform_image_tuples | map('community.general.dict') }}"
+        _platform_image_uncached: "{{ _platform_image_data | rejectattr('path', 'in', _platform_image_cached) }}"
+      loop_control:
+        label: "{{ item.url }} -> {{ item.path }}"
+      loop: "{{ _platform_image_uncached }}"
+
+
+- name: Create KVM guests
+  hosts: all
+  gather_facts: false
+  become: true
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Create KVM guest
+      delegate_to: localhost
+      block:
+        - name: Create guest SSH key
+          become: false
+          block:
+            - name: Create guest dir
+              ansible.builtin.file:
+                path: "{{ _libvirt_guestdir }}"
+                state: directory
+                mode: 0755
+
+            - name: Create SSH key
+              community.crypto.openssh_keypair:
+                path: "{{ _libvirt_guestdir }}/id_rsa"
+              run_once: true
+              register: _pubkey
+
+        - name: Record pubkey
+          ansible.builtin.set_fact:
+            _envkey: "{{ _pubkey }}"
+          delegate_to: localhost
+          delegate_facts: true
+
+        - name: Query active KVM guests
+          ansible.builtin.command: virsh list --name
+          run_once: true
+          register: guest_query
+          changed_when: false
+
+        - name: Manage KVM guests
+          when: inventory_hostname not in guest_query.stdout_lines
+          block:
+            - name: Create KVM guest disks
+              ansible.builtin.copy:
+                remote_src: true
+                src: "{{ _libvirt_path }}/{{ _platform.image | urlsplit('path') | basename }}"
+                dest: "{{ _disk }}"
+                owner: libvirt-qemu
+                group: kvm
+                mode: 0666
+                force: true
+              vars:
+                _platforms: "{{ _libvirt_platforms }}"
+                _platform: "{{ _platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+                _disk: "{{ _libvirt_path }}/{{ _platform.name }}.img"
+
+            - name: Resize KVM guest disks
+              ansible.builtin.command:
+                cmd: qemu-img resize {{ _disk }} {{ _platform.size | default('20G') }}
+              vars:
+                _platforms: "{{ _libvirt_platforms }}"
+                _platform: "{{ _platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+                _disk: "{{ _libvirt_path }}/{{ _platform.name }}.img"
+
+            - name: Create cloud-init tempdir
+              ansible.builtin.tempfile:
+                state: directory
+                prefix: libvirt
+              register: libvirt_tmpdir
+              run_once: true
+
+            - name: Create KVM guest
+              block:
+                - name: Create instance tempdir
+                  ansible.builtin.file:
+                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}"
+                    state: directory
+
+                - name: Create cloud-init meta data
+                  ansible.builtin.template:
+                    src: "meta-data.yml.j2"
+                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/meta-data"
+
+                - name: Debug password hash
+                  ansible.builtin.debug:
+                    msg: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
+
+                - name: Set platform facts
+                  ansible.builtin.set_fact:
+                    _platforms: "{{ _libvirt_platforms | zip(_addresses) | map(_combine) }}"
+                  vars:
+                    _from_json: 'ansible.builtin.from_json'
+                    _format: 'nephelaiio.plugins.map_format'
+                    _combine: 'ansible.builtin.combine'
+                    _ipaddr: 'ansible.utils.ipaddr'
+                    _template: '{ "address": "%s" }'
+                    _iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
+                    _iface_network: "{{ _libvirt_address | ansible.utils.ipaddr('network') }}"
+                    _iface_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
+                    _iface_netaddr: "{{ _iface_network }}/{{ _iface_prefix }}"
+                    _network_range: "{{ _iface_netaddr | ansible.utils.usable_range }}"
+                    _network_free: "{{ _network_range.usable_ips | difference([ _iface_network, _iface_host]) }}"
+                    _network_usable: "{{ _network_free | community.general.version_sort }}"
+                    _addresses: "{{ _network_usable[0:_libvirt_platforms | length] | map(_format, _template) | map(_from_json)}}"
+
+                - name: Create cloud-init user data
+                  ansible.builtin.template:
+                    src: "user-data.yml.j2"
+                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/user-data"
+                  vars:
+                    _platform: "{{ _platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+                    guest_gateway: "{{ _libvirt_address }}"
+                    guest_user: "{{ _libvirt_user }}"
+                    guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
+                    guest_key: "{{ _pubkey.public_key }}"
+                    guest_address: "{{ _platform.address }}"
+
+                - name: Create cloud-init iso
+                  ansible.builtin.command:
+                    cmd: |
+                      xorriso -as mkisofs
+                      -volid cidata -joliet -rock
+                      -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
+                    chdir: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}"
+
+                - name: Create KVM guest
+                  community.libvirt.virt:
+                    xml: "{{ lookup('ansible.builtin.template', 'vm.j2.xml') }}"
+                    command: define
+                  vars:
+                    guest_hostname: "{{ inventory_hostname }}"
+                    guest_disk_format: qcow2
+                    guest_disk_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.img"
+                    guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
+                    guest_network: "{{ _libvirt_network }}"
+                    guest_mem: "{{ (_platform.mem | default(2)) * 1024 }}"
+                    guest_cpu: "{{ _platform.cpu | default(2) }}"
+
+              always:
+                - name: Destroy cloud-init tempdir
+                  ansible.builtin.file:
+                    dest: "{{ libvirt_tmpdir.path }}"
+                    state: absent
+                  run_once: true
+
+        - name: Start KVM guest
+          community.libvirt.virt:
+            name: "{{ inventory_hostname }}"
+            state: running
+
+
+- name: Build instance config file
+  hosts: localhost
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Set platform facts
+      ansible.builtin.set_fact:
+        _instances: "{{ [_instance] | product(_platforms) | map(_combine) | map(_alias, _aliases) }}"
+      vars:
+        _from_json: 'ansible.builtin.from_json'
+        _format: 'nephelaiio.plugins.map_format'
+        _combine: 'ansible.builtin.combine'
+        _ipaddr: 'ansible.utils.ipaddr'
+        _alias: 'nephelaiio.plugins.alias_keys'
+        _template: '{ "address": "%s" }'
+        _iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
+        _iface_network: "{{ _libvirt_address | ansible.utils.ipaddr('network') }}"
+        _iface_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
+        _iface_netaddr: "{{ _iface_network }}/{{ _iface_prefix }}"
+        _network_range: "{{ _iface_netaddr | ansible.utils.usable_range }}"
+        _network_free: "{{ _network_range.usable_ips | difference([ _iface_network, _iface_host]) }}"
+        _network_usable: "{{ _network_free | community.general.version_sort }}"
+        _addresses: "{{ _network_usable[0:_libvirt_platforms | length] | map(_format, _template) | map(_from_json)}}"
+        _platforms: "{{ _libvirt_platforms | zip(_addresses) | map(_combine) }}"
+        _instance:
+          port: 22
+          user: "{{ _libvirt_user }}"
+          identity_file: "{{ _envkey.filename }}"
+        _aliases:
+          name: instance
+
+    - name: Build molecule instance config
+      when: molecule_instance_config is defined
+      block:
+        - name: Retrieve platform ip information
+          block:
+            - name: Query VM attributes
+              community.libvirt.virt:
+                name: "{{ item }}"
+                command: get_xml
+              loop: "{{ _libvirt_platforms | map(attribute='name') }}"
+              register: xml_query
+
+            - name: Set VM attribute facts
+              ansible.builtin.set_fact:
+                _libvirt_macs: "{{ _macs }}"
+              vars:
+                _attr: 'domain.devices.interface.mac.@address'
+                _xml: "{{ xml_query.results | map(attribute='get_xml') | map('ansible.utils.from_xml') }}"
+                _macs: "{{ _xml | map('ansible.builtin.from_json') | map(attribute=_attr) }}"
+
+            - name: Wait for DHCP lease assignment
+              ansible.builtin.shell:
+                cmd: "virsh net-dhcp-leases --network {{ _libvirt_network }} | grep {{ item }}"
+                executable: /bin/bash
+              vars:
+              loop: "{{ _libvirt_macs }}"
+              register: dhcp_query
+              retries: 6
+              delay: 30
+              until: dhcp_query is succeeded
+
+            - name: Query DHCP leases
+              ansible.builtin.shell: >
+                virsh net-dhcp-leases --network {{ _libvirt_network }} | grep {{ item }} | awk '{print $5}'
+              loop: "{{ _libvirt_macs }}"
+              register: dhcp_query
+
+        - name: Populate instance config dict
+          ansible.builtin.set_fact:
+            instance_conf_dict: {
+              'instance': "{{ item.0 }}",
+              'address': "{{ item.1 | ansible.utils.ipaddr('address') }}",
+              'user': "{{ _libvirt_user }}",
+              'port': "22",
+              'identity_file': "{{ _envkey.filename }}"
+            }
+          vars:
+            _libvirt_addresses: "{{ dhcp_query.results | map(attribute='stdout') }}"
+          loop: "{{ _libvirt_platforms | map(attribute='name') | zip(_libvirt_addresses) }}"
+          register: instance_config_dict
+
+        - name: Convert instance config dict to a list
+          ansible.builtin.set_fact:
+            _instance_conf: "{{ _instance_results | map(attribute='ansible_facts.instance_conf_dict') | list }}"
+          vars:
+            _instance_results: "{{ instance_config_dict.results }}"
+
+        - name: Dump instance config
+          ansible.builtin.copy:
+            content: "{{ _instance_conf | ansible.builtin.to_nice_yaml(indent=2) }}"
+            dest: "{{ molecule_instance_config }}"
+            mode: 0640
+
+        - name: Configure host file entries
+          ansible.builtin.lineinfile:
+            path: /etc/hosts
+            regexp: ".*{{ item.instance }}.*"
+            line: "{{ item.address }} {{ item.instance }}"
+          loop_control:
+            label: "{{ item.instance }}"
+          loop: "{{ _instance_conf }}"
+          become: true

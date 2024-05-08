@@ -1,0 +1,20 @@
+---
+namespace: nephelaiio
+name: libvirt
+version: 0.0.0
+readme: README.md
+authors:
+  - Ted Cook <358176+teddyphreak@users.noreply.github.com>
+description: Libvirt collection
+license:
+  - MIT
+tags:
+  - k8s
+  - rke
+dependencies:
+  "nephelaiio.plugins": "*"
+repository: http://github.com/nephelaiio/ansible-collection-libvirt
+documentation: http://github.com/nephelaiio/ansible-collection-libvirt
+homepage: http://github.com/nephelaiio/ansible-collection-libvirt
+issues: http://github.com/nephelaiio/ansible-collection-libvirt/issues
+build_ignore: []

@@ -1,0 +1,9 @@
+#!/usr/bin/env expect
+
+set timeout 3
+spawn make login
+
+expect {
+    "$ " { send "exit\n" }
+    "timeout" { exit 1 }
+}

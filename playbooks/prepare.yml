@@ -1,0 +1,17 @@
+---
+- name: Prepare KVM host
+  hosts: "{{ _libvirt_group }}"
+  become: true
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Install deb package requirements
+      ansible.builtin.package:
+        name:
+          - qemu-kvm
+          - qemu-efi
+          - libvirt-clients
+          - libvirt-daemon-system
+          - libvirt-daemon-system-systemd
+          - python3-libvirt
+      when: ansible_os_family == 'Debian'

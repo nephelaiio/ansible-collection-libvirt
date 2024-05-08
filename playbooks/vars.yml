@@ -1,0 +1,19 @@
+---
+# Overridable values
+_libvirt_group: "{{ libvirt_group | default('localhost') }}"
+_libvirt_network: "{{ libvirt_network }}"
+_libvirt_address: "{{ libvirt_address }}"
+_libvirt_prefix: "{{ libvirt_address | ansible.utils.ipaddr('prefix') }}"
+_libvirt_dhcp: "{{ libvirt_address | ansible.utils.ipsubnet(_libvirt_prefix, 0) }}"
+_libvirt_user: "{{ libvirt_user | default('molecule') }}"
+_libvirt_pass: "{{ libvirt_user | default('molecule') }}"
+_libvirt_pool: "{{ libvirt_pool | default(_libvirt_network) }}"
+_libvirt_path: "{{ libvirt_path | default(_libvirt_default_pool_path) }}"
+_libvirt_platforms: "{{ libvirt_platforms | default([]) }}"
+_libvirt_guestdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY', default=_libvirt_default_temp_path) }}"
+_libvirt_purge: "{{ lookup('ansible.builtin.env', 'LIBVIRT_PURGE', default=False) }}"
+_libvirt_logdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_libvirt_guestdir) }}/logs"
+
+# Hardcoded values
+_libvirt_default_pool_path: "/var/lib/libvirt/{{ _libvirt_network }}"
+_libvirt_default_temp_path: "/tmp/{{ _libvirt_network }}"
