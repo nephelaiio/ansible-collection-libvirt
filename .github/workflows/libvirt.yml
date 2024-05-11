@@ -52,21 +52,12 @@ jobs:
         run: sudo apt-get install -y make
 
       - name: Run molecule tests
-        run: make create prepare converge verify
+        run: make test
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
           MOLECULE_KVM_IMAGE: ${{ matrix.image }}
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
-
-      - name: Run molecule verify
-        env:
-          PY_COLORS: '1'
-          ANSIBLE_FORCE_COLOR: '1'
-          MOLECULE_KVM_IMAGE: ${{ matrix.image }}
-          MOLECULE_SCENARIO: ${{ matrix.scenario }}
-          MOLECULE_LOGDIR: "/tmp/logs"
-        if: always()
 
       - name: Upload install logs
         uses: actions/upload-artifact@v3
