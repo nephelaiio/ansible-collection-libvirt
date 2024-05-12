@@ -72,14 +72,6 @@ jobs:
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
+          LIBVIRT_DEBUG: 'false'
           MOLECULE_KVM_IMAGE: ${{ matrix.image }}
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
-
-      - name: Upload install logs
-        uses: actions/upload-artifact@v3
-        with:
-          name: install-logs
-          path: |
-            /tmp/logs/*.log
-          if-no-files-found: ignore
-        if: always()

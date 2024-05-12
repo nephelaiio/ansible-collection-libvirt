@@ -60,6 +60,7 @@
       always:
         - name: Collect install logs
           delegate_to: localhost
+          when: "{{ libvirt_debug | bool }}"
           become: true
           block:
             - name: Create logdir
