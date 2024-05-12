@@ -29,6 +29,7 @@ install:
 	@type expect || sudo apt-get install -y expect
 	@type nmcli || sudo apt-get install -y network-manager
 	@sudo apt-get install -y libvirt-dev
+	@groups | grep -q libvirt || sudo usermod -aG libvirt $$(whoami)
 	@poetry install --no-root
 
 lint: install
