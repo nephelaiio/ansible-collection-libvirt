@@ -117,7 +117,7 @@
               ansible.posix.mount:
                 path: "{{ _guest_nbddir }}"
                 src: "{{ _nbd_partition.node }}"
-                fstype: ext4
+                fstype: "{{ (ansible_os_family == 'Debian') | ternary('ext4', 'xfs') }}"
                 state: ephemeral
 
             - name: Debug NBD mount location
