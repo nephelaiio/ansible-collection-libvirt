@@ -35,7 +35,23 @@ jobs:
       matrix:
         include:
           - scenario: default
+            image: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+          - scenario: default
             image: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+          - scenario: default
+            image: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+          - scenario: default
+            image: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2
+          - scenario: default
+            image: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-amd64.qcow2
+          - scenario: default
+            image: https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-latest.x86_64.qcow2
+          - scenario: default
+            image: https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2
+          - scenario: default
+            image: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
+          - scenario: default
+            image: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
     steps:
       - name: Check out the codebase
         uses: actions/checkout@v4
