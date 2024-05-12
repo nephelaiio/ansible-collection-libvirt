@@ -60,6 +60,7 @@
       always:
         - name: Collect install logs
           delegate_to: localhost
+          when: "{{ libvirt_debug | bool }}"
           become: true
           block:
             - name: Create logdir
@@ -117,7 +118,7 @@
               ansible.posix.mount:
                 path: "{{ _guest_nbddir }}"
                 src: "{{ _nbd_partition.node }}"
-                fstype: ext4
+                fstype: "{{ (ansible_os_family == 'Debian') | ternary('ext4', 'xfs') }}"
                 state: ephemeral
 
             - name: Debug NBD mount location

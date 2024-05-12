@@ -27,7 +27,8 @@ install:
 	@type poetry >/dev/null || pip3 install poetry
 	@type yq || sudo apt-get install -y yq
 	@type expect || sudo apt-get install -y expect
-	@sudo apt-get install -y libvirt-dev
+	@type nmcli || sudo apt-get install -y network-manager
+	@sudo apt-get install -y libvirt-dev xfsprogs
 	@poetry install --no-root
 
 lint: install

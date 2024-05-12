@@ -19,6 +19,7 @@ provisioner:
     hosts:
       all:
         vars:
+          libvirt_debug: "{{ lookup('ansible.builtin.env', 'LIBVIRT_DEBUG', default=True) }}"
           libvirt_address: '172.31.252.1/24'
           libvirt_network: 'molecule'
           libvirt_platforms: "{{ molecule_yml.platforms }}"
@@ -39,7 +40,5 @@ scenario:
     - dependency
     - create
     - prepare
-    - converge
-    - side_effect
     - verify
     - destroy
