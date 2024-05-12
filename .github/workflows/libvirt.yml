@@ -41,9 +41,9 @@ jobs:
           - scenario: default
             image: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
           - scenario: default
-            image: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2
+            image: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
           - scenario: default
-            image: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-amd64.qcow2
+            image: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2
           - scenario: default
             image: https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-latest.x86_64.qcow2
           - scenario: default
