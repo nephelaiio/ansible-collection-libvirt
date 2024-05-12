@@ -28,8 +28,7 @@ install:
 	@type yq || sudo apt-get install -y yq
 	@type expect || sudo apt-get install -y expect
 	@type nmcli || sudo apt-get install -y network-manager
-	@sudo apt-get install -y libvirt-dev libvirt-daemon-system
-	@groups | grep -q libvirt || sudo usermod -aG libvirt $$(whoami)
+	@sudo apt-get install -y libvirt-dev
 	@poetry install --no-root
 
 lint: install

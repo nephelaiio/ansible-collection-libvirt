@@ -281,15 +281,16 @@
       when: molecule_instance_config is defined
       block:
         - name: Retrieve platform ip information
+          become: true
           block:
-            - name: Query VM attributes
+            - name: Query guest attributes
               community.libvirt.virt:
                 name: "{{ item }}"
                 command: get_xml
               loop: "{{ _libvirt_platforms | map(attribute='name') }}"
               register: xml_query
 
-            - name: Set VM attribute facts
+            - name: Set guest attribute facts
               ansible.builtin.set_fact:
                 _libvirt_macs: "{{ _macs }}"
               vars:
