@@ -17,7 +17,7 @@
 
     - name: Debug vardefs
       ansible.builtin.debug:
-        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') }}"
+        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
       vars:
         _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True)  }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
