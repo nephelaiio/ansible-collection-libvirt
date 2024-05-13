@@ -1,9 +1,9 @@
 ---
 # Overridable values
-_libvirt_group: "{{ libvirt_group | default('localhost') }}"
-_libvirt_network: "{{ libvirt_network }}"
+_libvirt_hosts: "{{ libvirt_hosts | default('localhost') }}"
+_libvirt_guests: "{{ libvirt_guests | default('all') }}"
+_libvirt_network: "{{ libvirt_network | default('molecule') }}"
 _libvirt_address: "{{ libvirt_address }}"
-_libvirt_prefix: "{{ libvirt_address | ansible.utils.ipaddr('prefix') }}"
 _libvirt_user: "{{ libvirt_user | default('molecule') }}"
 _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
 _libvirt_pool: "{{ libvirt_pool | default(_libvirt_network) }}"
@@ -13,6 +13,7 @@ _libvirt_purge: "{{ lookup('ansible.builtin.env', 'LIBVIRT_PURGE', default=False
 _libvirt_logdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_libvirt_guestdir + '/logs') }}"
 
 # Derived values
+_libvirt_prefix: "{{ libvirt_address | ansible.utils.ipaddr('prefix') }}"
 _libvirt_iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
 _libvirt_iface_network: "{{ _libvirt_address | ansible.utils.ipaddr('network') }}"
 _libvirt_iface_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"

@@ -4,7 +4,7 @@
 
 
 - name: Configure guests
-  hosts: "{{ _libvirt_group }}"
+  hosts: "{{ _libvirt_hosts }}"
   become: true
   vars_files:
     - vars.yml
@@ -12,7 +12,7 @@
     - name: Verify required parameters
       ansible.builtin.assert:
         that:
-          - _libvirt_network is defined
+          - _libvirt_platforms is defined
           - _libvirt_address is defined
 
     - name: Debug vardefs
@@ -95,7 +95,7 @@
 
 
 - name: Create KVM guests
-  hosts: all
+  hosts: "{{ _libvirt_guests }}"
   gather_facts: false
   become: true
   vars_files:
@@ -137,6 +137,7 @@
             - name: Filter platform facts
               ansible.builtin.set_fact:
                 guest_image: "{{ _platform.image }}"
+                guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
                 guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
                 guest_disk_size: "{{ _platform.size | default('20G') }}"
                 guest_gateway: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
@@ -200,6 +201,7 @@
                   ansible.builtin.template:
                     src: "network-config.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/network-config"
+                  when: not guest_dhcp
 
                 - name: Create cloud-init iso
                   ansible.builtin.command:
