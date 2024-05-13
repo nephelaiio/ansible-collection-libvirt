@@ -1,6 +1,6 @@
 ---
 - name: Prepare KVM host
-  hosts: "{{ _libvirt_group }}"
+  hosts: "{{ _libvirt_hosts }}"
   become: true
   vars_files:
     - vars.yml

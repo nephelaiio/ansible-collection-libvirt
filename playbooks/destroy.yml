@@ -1,13 +1,13 @@
 ---
 - name: Destroy KVM guests
-  hosts: "{{ _libvirt_group }}"
+  hosts: "{{ _libvirt_hosts }}"
   become: true
   vars_files:
     - vars.yml
   tasks:
     - name: Debug vardefs
       ansible.builtin.debug:
-        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') }}"
+        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
       vars:
         _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True)  }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
@@ -39,7 +39,7 @@
 
 
 - name: Destroy guests
-  hosts: "{{ _libvirt_group }}"
+  hosts: "{{ _libvirt_hosts }}"
   become: true
   vars_files:
     - vars.yml
