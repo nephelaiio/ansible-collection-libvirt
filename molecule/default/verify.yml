@@ -137,10 +137,15 @@
 
             - name: Copy cloud-init log
               ansible.builtin.copy:
-                src: "{{ _guest_nbddir }}/{{ item.src }}"
-                dest: "{{ _libvirt_logdir }}/{{ _guest_name }}.{{ item.dest }}"
+                src: "{{ log_src }}"
+                dest: "{{ log_dest }}"
                 remote_src: true
                 mode: 0666
+              vars:
+                log_src: "{{ _guest_nbddir }}/{{ item.src }}"
+                log_dest: "{{ _libvirt_logdir }}/{{ _guest_name }}.{{ item.dest }}"
+              loop_control:
+                label: "{{ log_dest }}"
               loop:
                 - src: var/lib/cloud/data/status.json
                   dest: cloud-init.status.json
