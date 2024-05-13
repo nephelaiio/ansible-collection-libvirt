@@ -11,7 +11,7 @@
   tasks:
     - name: Verify required parameters
       ansible.builtin.assert:
-        that: _libvirt_platforms is defined
+        that: _libvirt_guests is defined
 
     - name: Debug vardefs
       ansible.builtin.debug:
@@ -80,7 +80,7 @@
         mode: 0600
       vars:
         _platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
-        _platform_image_urls: "{{ _libvirt_platforms | map(attribute='image') | unique }}"
+        _platform_image_urls: "{{ _libvirt_guests | map(attribute='image') | unique }}"
         _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
         _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
         _platform_image_tuples: "{{ (['url'] | zip(_platform_image_urls)) | zip(['path'] | zip(_platform_image_paths)) }}"
@@ -150,7 +150,7 @@
                 guest_ipaddr: "{{ _platform.ipaddr }}/{{ _libvirt_prefix }}"
                 guest_macaddr: "{{ _platform.macaddr }}"
               vars:
-                _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+                _platform: "{{ _libvirt_guests | selectattr('name', 'equalto', inventory_hostname) | first }}"
 
             - name: Create KVM guest disks
               ansible.builtin.copy:
@@ -242,7 +242,7 @@
         _aliases:
           name: instance
           ipaddr: address
-        _platform_instances: "{{ [_instance] | product(_libvirt_platforms) | map(_libvirt_filter_combine) }}"
+        _platform_instances: "{{ [_instance] | product(_libvirt_guests) | map(_libvirt_filter_combine) }}"
 
     - name: Build molecule instance config
       when: molecule_instance_config is defined

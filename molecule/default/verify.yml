@@ -9,7 +9,7 @@
       block:
         - name: Filter platform facts
           ansible.builtin.set_fact:
-            _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) }}"
+            _platform: "{{ _libvirt_guests | selectattr('name', 'equalto', inventory_hostname) }}"
 
         - name: Check platform
           ansible.builtin.assert:

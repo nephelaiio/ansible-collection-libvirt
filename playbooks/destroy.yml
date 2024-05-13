@@ -19,7 +19,7 @@
 
     - name: Set KVM guest facts
       ansible.builtin.set_fact:
-        _guests: "{{ _libvirt_platforms | map(attribute='name') | intersect(guest_query.stdout_lines) }}"
+        _guests: "{{ _libvirt_guests | map(attribute='name') | intersect(guest_query.stdout_lines) }}"
 
     - name: Stop KVM guests
       ansible.builtin.command: "virsh destroy {{ item }}"
@@ -34,7 +34,7 @@
         dest: "{{ item }}"
         state: absent
       vars:
-        _basenames: "{{ _libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
+        _basenames: "{{ _libvirt_guests | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
       loop: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
 
 
@@ -72,7 +72,7 @@
         path: /etc/hosts
         regexp: ".*{{ item }}.*"
         state: absent
-      loop: "{{ _libvirt_platforms | map(attribute='name') }}"
+      loop: "{{ _libvirt_guests | map(attribute='name') }}"
 
     - name: Delete libvirt pool
       when: _libvirt_purge
@@ -82,7 +82,7 @@
             dest: "{{ item }}"
             state: absent
           vars:
-            _platform_image_urls: "{{ _libvirt_platforms | map(attribute='image') | unique }}"
+            _platform_image_urls: "{{ _libvirt_guests | map(attribute='image') | unique }}"
             _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
             _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
           loop: "{{ _platform_image_paths }}"
