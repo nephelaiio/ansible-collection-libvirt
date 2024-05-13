@@ -262,6 +262,6 @@
             regexp: ".*{{ item.instance }}.*"
             line: "{{ item.address }} {{ item.instance }}"
           loop_control:
-            label: "{ { item.instance }}"
+            label: "{{ item.instance }}"
           loop: "{{ _platform_molecule }}"
           become: true
