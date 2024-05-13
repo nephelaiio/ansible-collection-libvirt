@@ -11,9 +11,7 @@
   tasks:
     - name: Verify required parameters
       ansible.builtin.assert:
-        that:
-          - _libvirt_platforms is defined
-          - _libvirt_address is defined
+        that: _libvirt_platforms is defined
 
     - name: Debug vardefs
       ansible.builtin.debug:
@@ -53,11 +51,11 @@
     - name: Add libvirt network
       community.libvirt.virt_net:
         command: define
-        name: "{{ _libvirt_network }}"
+        name: "{{ _net_name }}"
         xml: "{{ lookup('ansible.builtin.template', 'network.j2.xml') }}"
       vars:
         _net_name: "{{ _libvirt_network }}"
-        _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+        _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
         _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
       when: _libvirt_network != "default"
 

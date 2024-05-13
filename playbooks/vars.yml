@@ -3,7 +3,7 @@
 _libvirt_hosts: "{{ libvirt_hosts | default('localhost') }}"
 _libvirt_guests: "{{ libvirt_guests | default('all') }}"
 _libvirt_network: "{{ libvirt_network | default('molecule') }}"
-_libvirt_address: "{{ libvirt_address }}"
+_libvirt_address: "{{ libvirt_address | default('172.31.252.1/24') }}"
 _libvirt_user: "{{ libvirt_user | default('molecule') }}"
 _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
 _libvirt_pool: "{{ libvirt_pool | default(_libvirt_network) }}"
