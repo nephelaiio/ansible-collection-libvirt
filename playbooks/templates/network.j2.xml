@@ -1,5 +1,5 @@
 <network>
-  <name>{{ _network }}</name>
+  <name>{{ _net_name }}</name>
   <forward mode='nat'>
     <nat>
       <port start='1024' end='65535'/>

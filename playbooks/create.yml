@@ -56,10 +56,9 @@
         name: "{{ _libvirt_network }}"
         xml: "{{ lookup('ansible.builtin.template', 'network.j2.xml') }}"
       vars:
-        _network: "{{ _libvirt_network }}"
-        _address: "{{ _libvirt_address }}"
-        _net_address: "{{ _address | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
-        _net_mask: "{{ _address | ansible.utils.ipaddr('netmask') }}"
+        _net_name: "{{ _libvirt_network }}"
+        _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+        _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
       when: _libvirt_network != "default"
 
     - name: Start libvirt network
