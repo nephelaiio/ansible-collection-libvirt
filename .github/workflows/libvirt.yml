@@ -38,7 +38,6 @@ jobs:
           - ubuntu2204
           - ubuntu2004
           - debian12
-          - debian11
           - alma9
           - alma8
           - rocky9
@@ -71,7 +70,7 @@ jobs:
       - name: Upload install logs
         uses: actions/upload-artifact@v4
         with:
-          name: install-logs
+          name: install.${{ matrix.os }}
           path: |
             /tmp/logs/*.log
           if-no-files-found: ignore
