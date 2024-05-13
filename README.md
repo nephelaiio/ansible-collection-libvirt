@@ -19,8 +19,8 @@ The following is the list of parameters intended for end-user manipulation:
 | Parameter         |                                  Default | Description                    | Required |
 |:------------------|-----------------------------------------:|:-------------------------------|:---------|
 | libvirt_platforms |                      [<platform_object>] | Libvirt guest list             | true     |
-| libvirt_address   |                                      n/a | Libvirt host address           | true     |
-| libvirt_network   |                               'molecule' | Libvirt network name           | true     |
+| libvirt_address   |                        '172.31.252.1/24' | Libvirt host address           | false    |
+| libvirt_network   |                               'molecule' | Libvirt network name           | false    |
 | libvirt_user      |                               'molecule' | OS user for guest access       | false    |
 | libvirt_pass      |                               'molecule' | OS password for guest access   | false    |
 | libvirt_pool      |                  '{{ libvirt_network }}' | Libvirt storage pool name      | false    |
