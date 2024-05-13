@@ -75,6 +75,7 @@ rocky9:
 
 test: lint
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
+	MOLECULE_OS_RELEASE=${MOLECULE_OS_RELEASE} \
 	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
 
 install:
