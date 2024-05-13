@@ -262,3 +262,13 @@
             label: "{{ item.instance }}"
           loop: "{{ _platform_molecule }}"
           become: true
+
+
+- name: Wait for guest initialization
+  hosts: localhost
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Wait for connection
+      ansible.builtin.wait_for_connection:
+        timeout: 30
