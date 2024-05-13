@@ -1,6 +1,6 @@
 # Ansible Collection - nephelaiio.libvirt
 
-[![Build Status](https://github.com/nephelaiio/ansible-collection-libvirt/actions/workflows/molecule.yml/badge.svg)](https://github.com/nephelaiio/ansible-collection-libvirt/actions/wofklows/molecule.yml)
+[![Build Status](https://github.com/nephelaiio/ansible-collection-libvirt/actions/workflows/libvirt.yml/badge.svg)](https://github.com/nephelaiio/ansible-collection-libvirt/actions/wofklows/libvirt.yml)
 [![Ansible Galaxy](http://img.shields.io/badge/ansible--galaxy-nephelaiio.libvirt-blue.svg)](https://galaxy.ansible.com/ui/repo/published/nephelaiio/libvirt/)
 
 An [ansible collection](https://galaxy.ansible.com/ui/repo/published/nephelaiio/libvirt/) to create local [Libvirt](https://libvirt.org/) vm guests
