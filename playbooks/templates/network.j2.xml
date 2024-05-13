@@ -6,9 +6,5 @@
     </nat>
   </forward>
   <bridge name='{{ _network }}br0' stp='on' delay='0'/>
-  <ip address='{{ _net_address }}' netmask='{{ _net_mask }}'>
-    <dhcp>
-      <range start='{{ _net_dhcp_start }}' end='{{ _net_dhcp_end }}'/>
-    </dhcp>
-  </ip>
+  <ip address='{{ _net_address }}' netmask='{{ _net_mask }}'/>
 </network>

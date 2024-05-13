@@ -9,12 +9,7 @@
       block:
         - name: Filter platform facts
           ansible.builtin.set_fact:
-            _platform: "{{ _platforms | selectattr('name', 'equalto', inventory_hostname) }}"
-          vars:
-            _from_json: 'ansible.builtin.from_json'
-            _format: 'nephelaiio.plugins.map_format'
-            _indices: "{{ range(_libvirt_platforms | length) | map(_format, '{ \"index\": \"%s\" }') | map(_from_json) }}"
-            _platforms: "{{ _libvirt_platforms | zip(_indices) | map('ansible.builtin.combine') }}"
+            _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) }}"
 
         - name: Check platform
           ansible.builtin.assert:
@@ -86,7 +81,12 @@
               ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
 
             - name: Stop KVM guest
-              ansible.builtin.command: "virsh destroy {{ _guest_name }}"
+              ansible.builtin.command: "virsh shutdown {{ _guest_name }}"
+
+            - name: Wait for guest shutdown
+              ansible.builtin.command: "virsh list --name"
+              register: _libvirt_query
+              until: _guest_name not in _libvirt_query.stdout_lines
 
             - name: Convert NBD disk image to raw format
               ansible.builtin.command: "qemu-img convert -O raw {{ _guest_disk }} {{ _guest_nbddisk }}"
@@ -115,11 +115,21 @@
                 var: _nbd_partitions
 
             - name: Mount guest NBD image file
-              ansible.posix.mount:
-                path: "{{ _guest_nbddir }}"
-                src: "{{ _nbd_partition.node }}"
-                fstype: "{{ (ansible_os_family == 'Debian') | ternary('ext4', 'xfs') }}"
-                state: ephemeral
+              block:
+                - name: Mount guest NBD image file (ext4)
+                  ansible.posix.mount:
+                    path: "{{ _guest_nbddir }}"
+                    src: "{{ _nbd_partition.node }}"
+                    fstype: ext4
+                    state: ephemeral
+
+              rescue:
+                - name: Mount guest NBD image file (xfs)
+                  ansible.posix.mount:
+                    path: "{{ _guest_nbddir }}"
+                    src: "{{ _nbd_partition.node }}"
+                    fstype: xfs
+                    state: ephemeral
 
             - name: Debug NBD mount location
               ansible.builtin.debug:
@@ -140,6 +150,7 @@
                   dest: cloud-config.txt
                 - src: "var/lib/cloud/instances/{{ _guest_name }}/user-data.txt"
                   dest: user-data.txt
+              ignore_errors: true
 
             - name: Debug cloud-init log location
               ansible.builtin.debug:
