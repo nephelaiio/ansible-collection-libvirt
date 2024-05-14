@@ -2,15 +2,8 @@
 - name: Prepare
   hosts: all
   become: true
-  gather_facts: false
+  gather_facts: true
   tasks:
-    - name: Wait for connection
-      ansible.builtin.wait_for_connection:
-        timeout: 30
-
-    - name: Gather facts
-      ansible.builtin.setup:
-
     - name: Update apt repos
       ansible.builtin.apt:
         update_cache: true

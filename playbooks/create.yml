@@ -225,6 +225,14 @@
             name: "{{ inventory_hostname }}"
             state: running
 
+        - name: Add KVM guest verification alias
+          ansible.builtin.add_host:
+            name: "{{ guest_ipaddr | ansible.utils.ipaddr('address') }}"
+            groups: molecule_guests
+            ansible_user: "{{ guest_user }}"
+            ansible_ssh_private_key_file: "{{ _pubkey.filename }}"
+            ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
 
 - name: Build Molecule instance config file
   hosts: localhost
@@ -247,6 +255,10 @@
     - name: Build molecule instance config
       when: molecule_instance_config is defined
       block:
+        - name: Debug instance config
+          ansible.builtin.debug:
+            var: _platform_molecule
+
         - name: Dump instance config
           ansible.builtin.copy:
             content: "{{ _platform_molecule | ansible.builtin.to_nice_yaml(indent=2) }}"
@@ -262,3 +274,14 @@
             label: "{{ item.instance }}"
           loop: "{{ _platform_molecule }}"
           become: true
+
+
+- name: Wait for KVM guest initialization
+  hosts: molecule_guests
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Wait for connection
+      ansible.builtin.wait_for_connection:
+        timeout: "{{ _libvirt_conn_timeout }}"
