@@ -266,9 +266,11 @@
 
 - name: Wait for guest initialization
   hosts: all
+  gather_facts: false
   vars_files:
     - vars.yml
   tasks:
     - name: Wait for connection
       ansible.builtin.wait_for_connection:
-        timeout: 30
+        delay: "{{ _libvirt_conn_delay }}"
+        timeout: "{{ _libvirt_conn_timeout }}"
