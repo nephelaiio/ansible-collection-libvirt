@@ -2,7 +2,7 @@
 users:
   - name: {{ guest_user }}
     ssh_authorized_keys:
-      - {{ guest_key }}
+      - {{ guest_pubkey }}
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     groups: sudo
     shell: /bin/bash

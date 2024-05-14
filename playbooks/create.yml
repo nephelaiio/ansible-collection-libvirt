@@ -98,30 +98,52 @@
   vars_files:
     - vars.yml
   tasks:
+    - name: Create guest SSH key
+      become: false
+      delegate_to: localhost
+      block:
+        - name: Create guest dir
+          ansible.builtin.file:
+            path: "{{ _libvirt_guestdir }}"
+            state: directory
+            mode: 0755
+
+        - name: Create SSH key
+          community.crypto.openssh_keypair:
+            path: "{{ _libvirt_guestdir }}/id_rsa"
+          run_once: true
+          register: _pubkey
+
+        - name: Register controller privkey facts
+          ansible.builtin.set_fact:
+            guest_privkey:  "{{ _pubkey.filename }}"
+          delegate_facts: true
+
+    - name: Set platform facts
+      ansible.builtin.set_fact:
+        guest_image: "{{ _platform.image }}"
+        guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
+        guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
+        guest_disk_size: "{{ _platform.size | default('20G') }}"
+        guest_gateway: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
+        guest_user: "{{ _libvirt_user }}"
+        guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
+        guest_pubkey: "{{ _pubkey.public_key }}"
+        guest_privkey:  "{{ _pubkey.filename }}"
+        guest_hostname: "{{ inventory_hostname }}"
+        guest_disk_format: qcow2
+        guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
+        guest_network: "{{ _libvirt_network }}"
+        guest_mem: "{{ (_platform.mem | default(2)) * 1024 }}"
+        guest_cpu: "{{ _platform.cpu | default(2) }}"
+        guest_ipaddr: "{{ _platform.ipaddr }}/{{ _libvirt_prefix }}"
+        guest_macaddr: "{{ _platform.macaddr }}"
+      vars:
+        _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+
     - name: Create KVM guest
       delegate_to: localhost
       block:
-        - name: Create guest SSH key
-          become: false
-          block:
-            - name: Create guest dir
-              ansible.builtin.file:
-                path: "{{ _libvirt_guestdir }}"
-                state: directory
-                mode: 0755
-
-            - name: Create SSH key
-              community.crypto.openssh_keypair:
-                path: "{{ _libvirt_guestdir }}/id_rsa"
-              run_once: true
-              register: _pubkey
-
-        - name: Record pubkey
-          ansible.builtin.set_fact:
-            _envkey: "{{ _pubkey }}"
-          delegate_to: localhost
-          delegate_facts: true
-
         - name: Query active KVM guests
           ansible.builtin.command: virsh list --name
           run_once: true
@@ -131,27 +153,6 @@
         - name: Manage KVM guests
           when: inventory_hostname not in guest_query.stdout_lines
           block:
-            - name: Filter platform facts
-              ansible.builtin.set_fact:
-                guest_image: "{{ _platform.image }}"
-                guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
-                guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
-                guest_disk_size: "{{ _platform.size | default('20G') }}"
-                guest_gateway: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
-                guest_user: "{{ _libvirt_user }}"
-                guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
-                guest_key: "{{ _pubkey.public_key }}"
-                guest_hostname: "{{ inventory_hostname }}"
-                guest_disk_format: qcow2
-                guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
-                guest_network: "{{ _libvirt_network }}"
-                guest_mem: "{{ (_platform.mem | default(2)) * 1024 }}"
-                guest_cpu: "{{ _platform.cpu | default(2) }}"
-                guest_ipaddr: "{{ _platform.ipaddr }}/{{ _libvirt_prefix }}"
-                guest_macaddr: "{{ _platform.macaddr }}"
-              vars:
-                _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
-
             - name: Create KVM guest disks
               ansible.builtin.copy:
                 remote_src: true
@@ -225,13 +226,13 @@
             name: "{{ inventory_hostname }}"
             state: running
 
-        - name: Add KVM guest verification alias
-          ansible.builtin.add_host:
-            name: "{{ guest_ipaddr | ansible.utils.ipaddr('address') }}"
-            groups: molecule_guests
-            ansible_user: "{{ guest_user }}"
-            ansible_ssh_private_key_file: "{{ _pubkey.filename }}"
-            ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    - name: Add KVM guest verification alias
+      ansible.builtin.add_host:
+        name: "{{ guest_ipaddr | ansible.utils.ipaddr('address') }}"
+        groups: molecule_guests
+        ansible_user: "{{ guest_user }}"
+        ansible_ssh_private_key_file: "{{ guest_privkey }}"
+        ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
 
 - name: Build Molecule instance config file
@@ -246,7 +247,7 @@
         _instance:
           port: 22
           user: "{{ _libvirt_user }}"
-          identity_file: "{{ _envkey.filename }}"
+          identity_file: "{{ guest_privkey }}"
         _aliases:
           name: instance
           ipaddr: address
