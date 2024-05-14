@@ -46,7 +46,7 @@ jobs:
           - default
         include:
           - os: ubuntu2404
-            scenario: addrss
+            scenario: address
     steps:
       - name: Check out the codebase
         uses: actions/checkout@v4
