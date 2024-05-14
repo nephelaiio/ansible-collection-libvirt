@@ -65,8 +65,16 @@ jobs:
       - name: Install requirements
         run: make requirements
 
-      - name: Run molecule tests
+      - name: Build test scenario
         run: make ${{ matrix.os }}
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_LOGDIR: '/tmp/logs'
+          MOLECULE_SCENARIO: ${{ matrix.scenario }}
+
+      - name: Run verification tests
+        run: make verify
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'

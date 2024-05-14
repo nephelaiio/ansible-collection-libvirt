@@ -11,8 +11,7 @@ _libvirt_path: "{{ libvirt_path | default(_libvirt_default_pool_path) }}"
 _libvirt_guestdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY', default=_libvirt_default_temp_path) }}"
 _libvirt_purge: "{{ lookup('ansible.builtin.env', 'LIBVIRT_PURGE', default=False) }}"
 _libvirt_logdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_libvirt_guestdir + '/logs') }}"
-_libvirt_conn_delay: "{{ libvirt_conn_delay | default('30') }}"
-_libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('30') }}"
+_libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('60') }}"
 
 # Derived values
 _libvirt_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"

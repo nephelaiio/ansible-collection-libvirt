@@ -25,7 +25,6 @@ The following is the list of parameters intended for end-user manipulation:
 | libvirt_pass         |                               'molecule' | OS password for guest access   | false    |
 | libvirt_pool         |                  '{{ libvirt_network }}' | Libvirt storage pool name      | false    |
 | libvirt_path         | '/var/lib/libvirt/{{ libvirt_network }}' | Libvirt storage pool directory | false    |
-| libvirt_conn_delay   |                                     '30' | Libvirt guest conn delay       | false    |
 | libvirt_conn_timeout |                                     '30' | Libvirt guest conn tiemout     | false    |
 
 The following environment variables are also supported

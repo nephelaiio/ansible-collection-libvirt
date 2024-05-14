@@ -19,7 +19,6 @@ provisioner:
     hosts:
       all:
         vars:
-          ansible_ssh_extra_args: '-o StrictHostKeyChecking=no'
           libvirt_platforms: "{{ molecule_yml.platforms }}"
 verifier:
   name: ansible
