@@ -67,6 +67,7 @@
                 state: directory
                 owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
                 mode: 0750
+              run_once: true
 
             - name: Load NBD module
               community.general.modprobe:
@@ -128,11 +129,17 @@
 
               rescue:
                 - name: Mount guest NBD image file (xfs)
-                  ansible.posix.mount:
-                    path: "{{ _guest_nbddir }}"
-                    src: "{{ _nbd_partition.node }}"
-                    fstype: xfs
-                    state: ephemeral
+                  block:
+                    - name: Mount guest NBD image file (xfs)
+                      ansible.posix.mount:
+                        path: "{{ _guest_nbddir }}"
+                        src: "{{ _nbd_partition.node }}"
+                        fstype: xfs
+                        state: ephemeral
+
+                  rescue:
+                    - name: Stop for host with unsupported partition fs
+                      ansible.builtin.meta: end_host
 
             - name: Debug NBD mount location
               ansible.builtin.debug:
