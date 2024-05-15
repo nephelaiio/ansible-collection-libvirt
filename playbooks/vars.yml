@@ -4,7 +4,7 @@ _libvirt_hosts: "{{ libvirt_hosts | default('localhost') }}"
 _libvirt_guests: "{{ libvirt_guests | default('all') }}"
 _libvirt_network: "{{ libvirt_network | default('molecule') }}"
 _libvirt_address: "{{ libvirt_address | default('172.31.252.1/24') }}"
-_libvirt_user: "{{ libvirt_user | default(_libvirt_default_user) }}"
+_libvirt_user: "{{ libvirt_user | default('molecule') }}"
 _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
 _libvirt_pool: "{{ libvirt_pool | default(_libvirt_network) }}"
 _libvirt_path: "{{ libvirt_path | default(_libvirt_default_pool_path) }}"
@@ -39,6 +39,5 @@ _libvirt_filter_combine: 'ansible.builtin.combine'
 _libvirt_filter_alias: 'nephelaiio.plugins.alias_keys'
 _libvirt_filter_select_attributes: 'nephelaiio.plugins.select_attributes'
 _libvirt_mac_prefix: '52:54:00'
-_libvirt_default_user: "{{ lookup('ansible.builtin.env', 'USER', default=_libvirt_default_temp_path) }}"
 _libvirt_default_pool_path: "/var/lib/libvirt/{{ _libvirt_network }}"
 _libvirt_default_temp_path: "/tmp/{{ _libvirt_network }}"
