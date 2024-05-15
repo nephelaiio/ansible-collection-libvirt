@@ -1,4 +1,8 @@
 ---
+- name: Set host facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+
+
 - name: Verify KVM guests
   hosts: all
   gather_facts: false
@@ -80,7 +84,7 @@
               ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
 
             - name: Stop KVM guest
-              ansible.builtin.command: "virsh shutdown {{ _guest_name }}"
+              ansible.builtin.shell: "virsh shutdown {{ _guest_name }} > /dev/null"
 
             - name: Wait for guest shutdown
               ansible.builtin.command: "virsh list --name"
@@ -141,19 +145,14 @@
                 remote_src: true
                 mode: 0666
               vars:
-                log_src: "{{ _guest_nbddir }}/{{ item.src }}"
-                log_dest: "{{ _libvirt_logdir }}/{{ _guest_name }}.{{ item.dest }}"
-              loop_control:
-                label: "{{ log_dest }}"
+                log_src: "{{ _guest_nbddir }}/{{ item }}"
+                log_dest: "{{ _libvirt_logdir }}/{{ _guest_name }}.{{ item | basename }}"
               loop:
-                - src: var/lib/cloud/data/status.json
-                  dest: cloud-init.status.json
-                - src: var/log/cloud-init.log
-                  dest: cloud-init.log
-                - src: "var/lib/cloud/instances/{{ _guest_name }}/cloud-config.txt"
-                  dest: cloud-config.txt
-                - src: "var/lib/cloud/instances/{{ _guest_name }}/user-data.txt"
-                  dest: user-data.txt
+                - "var/lib/cloud/data/status.json"
+                - "var/log/cloud-init.log"
+                - "var/log/cloud-init-output.log"
+                - "var/lib/cloud/instances/{{ _guest_name }}/cloud-config.txt"
+                - "var/lib/cloud/instances/{{ _guest_name }}/user-data.txt"
               ignore_errors: true
 
             - name: Debug cloud-init log location

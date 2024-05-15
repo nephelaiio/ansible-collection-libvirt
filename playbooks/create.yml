@@ -1,4 +1,8 @@
 ---
+- name: Set host facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+
+
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
@@ -187,10 +191,6 @@
                     src: "meta-data.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/meta-data"
 
-                - name: Debug password hash
-                  ansible.builtin.debug:
-                    msg: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
-
                 - name: Create cloud-init user data
                   ansible.builtin.template:
                     src: "user-data.yml.j2"
@@ -226,14 +226,6 @@
           community.libvirt.virt:
             name: "{{ inventory_hostname }}"
             state: running
-
-    - name: Add KVM guest verification alias
-      ansible.builtin.add_host:
-        name: "{{ guest_ipaddr | ansible.utils.ipaddr('address') }}"
-        groups: _molecule_guests
-        ansible_user: "{{ guest_user }}"
-        ansible_ssh_private_key_file: "{{ guest_privkey }}"
-        ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
 
 - name: Build Molecule instance config file
@@ -279,7 +271,7 @@
 
 
 - name: Wait for KVM guest initialization
-  hosts: _molecule_guests
+  hosts: "{{ _libvirt_guests }}"
   gather_facts: false
   vars_files:
     - vars.yml
