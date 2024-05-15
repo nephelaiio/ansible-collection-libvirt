@@ -1,4 +1,8 @@
 ---
+- name: Set host facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+
+
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
@@ -100,6 +104,7 @@
   tasks:
     - name: Create guest SSH key
       become: false
+      run_once: true
       delegate_to: localhost
       block:
         - name: Create guest dir
@@ -186,10 +191,6 @@
                     src: "meta-data.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/meta-data"
 
-                - name: Debug password hash
-                  ansible.builtin.debug:
-                    msg: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
-
                 - name: Create cloud-init user data
                   ansible.builtin.template:
                     src: "user-data.yml.j2"
@@ -226,13 +227,17 @@
             name: "{{ inventory_hostname }}"
             state: running
 
-    - name: Add KVM guest verification alias
+    - name: Override KVM guest configuration settings
       ansible.builtin.add_host:
-        name: "{{ guest_ipaddr | ansible.utils.ipaddr('address') }}"
-        groups: molecule_guests
-        ansible_user: "{{ guest_user }}"
-        ansible_ssh_private_key_file: "{{ guest_privkey }}"
+        hostname: "{{ item.name }}"
+        ansible_host: "{{ item.ipaddr | ansible.utils.ipaddr('address') }}"
+        ansible_user: "{{ _libvirt_user }}"
+        ansible_ssh_private_key_file: "{{ _pubkey.filename }}"
         ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+      loop_control:
+        label: "{{ item.name }}"
+      loop: "{{ _libvirt_platforms }}"
+      run_once: true
 
 
 - name: Build Molecule instance config file
@@ -278,7 +283,7 @@
 
 
 - name: Wait for KVM guest initialization
-  hosts: molecule_guests
+  hosts: "{{ _libvirt_guests }}"
   gather_facts: false
   vars_files:
     - vars.yml

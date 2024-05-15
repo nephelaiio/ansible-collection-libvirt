@@ -9,6 +9,8 @@ driver:
 platforms:
   - name: libvirt-${MOLECULE_SCENARIO_NAME}-01
     image: "${MOLECULE_KVM_IMAGE}"
+  - name: libvirt-${MOLECULE_SCENARIO_NAME}-02
+    image: "${MOLECULE_KVM_IMAGE}"
 provisioner:
   name: ansible
   config_options:

@@ -1,10 +1,18 @@
 ---
+- name: Prepare guest nodes
+  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+
+
 - name: Destroy KVM guests
   hosts: "{{ _libvirt_hosts }}"
   become: true
   vars_files:
     - vars.yml
   tasks:
+    - name: Verify required parameters
+      ansible.builtin.assert:
+        that: _libvirt_platforms is defined
+
     - name: Debug vardefs
       ansible.builtin.debug:
         msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
