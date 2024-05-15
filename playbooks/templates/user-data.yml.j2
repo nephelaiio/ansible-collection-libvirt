@@ -6,4 +6,5 @@ users:
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     groups: sudo
     shell: /bin/bash
-    passwd: "{{ guest_pass }}"
+    lock_passwd: false
+    passwd: {{ guest_pass }}
