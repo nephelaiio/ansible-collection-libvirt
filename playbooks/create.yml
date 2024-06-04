@@ -170,7 +170,7 @@
 
             - name: Resize KVM guest disks
               ansible.builtin.command:
-                cmd: qemu-img resize {{ guest_disk_path }} {{ guest_size | default('20G') }}
+                cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
 
             - name: Create cloud-init tempdir
               ansible.builtin.tempfile:
