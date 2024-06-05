@@ -31,6 +31,7 @@ _libvirt_index_list: "{{ _libvirt_index_data | map(_libvirt_filter_from_json)  }
 _libvirt_platform_ipaddrs: "{{ libvirt_platforms | zip(_libvirt_ipaddr_list) | map(_libvirt_filter_combine) }}"
 _libvirt_platform_indices: "{{ _libvirt_platform_ipaddrs | zip(_libvirt_index_list) | map(_libvirt_filter_combine) }}"
 _libvirt_platform_data: "{{ _libvirt_platform_indices }}"
+_libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
 
 # Hardcoded values
 _libvirt_filter_from_json: 'ansible.builtin.from_json'
