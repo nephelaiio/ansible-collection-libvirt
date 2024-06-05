@@ -177,29 +177,23 @@
                 state: directory
                 prefix: libvirt
               register: libvirt_tmpdir
-              run_once: true
 
             - name: Create KVM guest
               block:
-                - name: Create instance tempdir
-                  ansible.builtin.file:
-                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}"
-                    state: directory
-
                 - name: Create cloud-init meta data
                   ansible.builtin.template:
                     src: "meta-data.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/meta-data"
+                    dest: "{{ libvirt_tmpdir.path }}/meta-data"
 
                 - name: Create cloud-init user data
                   ansible.builtin.template:
                     src: "user-data.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/user-data"
+                    dest: "{{ libvirt_tmpdir.path }}/user-data"
 
                 - name: Create cloud-init network data
                   ansible.builtin.template:
                     src: "network-config.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}/network-config"
+                    dest: "{{ libvirt_tmpdir.path }}/network-config"
                   when: not guest_dhcp
 
                 - name: Create cloud-init iso
@@ -208,7 +202,7 @@
                       xorriso -as mkisofs
                       -volid cidata -joliet -rock
                       -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
-                    chdir: "{{ libvirt_tmpdir.path }}/{{ inventory_hostname }}"
+                    chdir: "{{ libvirt_tmpdir.path }}"
 
                 - name: Create KVM guest
                   community.libvirt.virt:
@@ -220,7 +214,6 @@
                   ansible.builtin.file:
                     dest: "{{ libvirt_tmpdir.path }}"
                     state: absent
-                  run_once: true
 
         - name: Start KVM guest
           community.libvirt.virt:
