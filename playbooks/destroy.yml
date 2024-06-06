@@ -67,10 +67,15 @@
           changed_when: false
 
         - name: Destroy libvirt network
-          ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
           when:
             - _libvirt_network != "default"
             - _libvirt_network in net_query.stdout_lines
+          block:
+            - name: Destroy libvirt network
+              ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
+
+            - name: Undefine libvirt network
+              ansible.builtin.command: "virsh net-undefine {{ _libvirt_network }}"
 
         - name: Destroy libvirt network bridge
           community.general.nmcli:
