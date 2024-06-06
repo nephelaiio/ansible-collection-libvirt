@@ -21,6 +21,7 @@ provisioner:
     hosts:
       all:
         vars:
+          libvirt_network: libvirt
           libvirt_platforms: "{{ molecule_yml.platforms }}"
           libvirt_address: '172.31.254.1/24'
 verifier:
