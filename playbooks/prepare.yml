@@ -14,4 +14,16 @@
           - libvirt-daemon-system
           - libvirt-daemon-system-systemd
           - python3-libvirt
+          - xorriso
       when: ansible_os_family == 'Debian'
+
+    - name: Install rpm package requirements
+      ansible.builtin.package:
+        name:
+          - qemu
+          - xfsprogs
+          - libvirt-client
+          - libvirt-daemon
+          - python3-libvirt
+          - xorriso
+      when: ansible_os_family == 'RedHat'

@@ -163,10 +163,12 @@
                 remote_src: true
                 src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
                 dest: "{{ guest_disk_path }}"
-                owner: libvirt-qemu
+                owner: "{{ (_host_os_family == 'Debian') | ternary('libvirt-qemu', 'qemu') }}"
                 group: kvm
                 mode: 0666
                 force: true
+              vars:
+                _host_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
 
             - name: Resize KVM guest disks
               ansible.builtin.command:
