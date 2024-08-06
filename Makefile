@@ -1,5 +1,7 @@
 .PHONY: ${MAKECMDGOALS}
 
+HOST_DISTRO = $$(grep ^ID /etc/os-release | cut -d '=' -f 2)
+PKGMAN = $$(if [ "$(HOST_DISTRO)" = "fedora" ]; then echo "dnf" ; else echo "apt-get"; fi)
 MOLECULE_SCENARIO ?= default
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= jammy
@@ -73,11 +75,12 @@ test: lint
 	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
 
 install:
-	@type poetry >/dev/null || pip3 install poetry
-	@type yq || sudo apt-get install -y yq
-	@type expect || sudo apt-get install -y expect
-	@type nmcli || sudo apt-get install -y network-manager
-	@sudo apt-get install -y libvirt-dev xfsprogs
+	@type poetry >/dev/null 2>/dev/null 2>/dev/null || pip3 install poetry
+	@type yq >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y yq
+	@type expect >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y expect
+	@type nmcli >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y $$(if [[ "${HOST_DISTRO}" == "fedora" ]]; then echo NetworkManager; else echo network-manager; fi)
+	@sudo ${PKGMAN} install -y xfsprogs
+	@sudo ${PKGMAN} install -y $$(if [[ "${HOST_DISTRO}" == "fedora" ]]; then echo libvirt-devel; else echo libvirt-dev; fi)
 	@poetry install --no-root
 
 lint: install
