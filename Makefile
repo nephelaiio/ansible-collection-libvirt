@@ -76,7 +76,7 @@ test: lint
 
 install:
 	@type poetry >/dev/null | 2>/dev/null| pip3 install poetry
-	@type yq >/dev/null | 2>/dev/null| sudo ${PKGMAN} install -y yq
+	@type yq >/dev/null 2>/dev/null| sudo ${PKGMAN} install -y yq
 	@type expect >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y expect
 	@type nmcli >/dev/null | 2>/dev/null| sudo ${PKGMAN} install -y $$(if [[ "${HOST_DISTRO}" == "fedora" ]]; then echo NetworkManager; else echo network-manager; fi)
 	@sudo ${PKGMAN} install -y xfsprogs
