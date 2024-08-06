@@ -1,7 +1,7 @@
 .PHONY: ${MAKECMDGOALS}
 
 HOST_DISTRO = $$(grep ^ID /etc/os-release | cut -d '=' -f 2)
-PKGMAN = $$(if [[ $(HOST_DISTRO) == "fedora" ]]; then echo "dnf" ; else echo "apt-get"; fi)
+PKGMAN = $$(if [ "$(HOST_DISTRO)" = "fedora" ]; then echo "dnf" ; else echo "apt-get"; fi)
 MOLECULE_SCENARIO ?= default
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= jammy
