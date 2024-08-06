@@ -1,6 +1,6 @@
 .PHONY: ${MAKECMDGOALS}
 
-HOST_DISTRO = $$( source /etc/os-release ; echo $$ID )
+HOST_DISTRO = $$(grep ^ID /etc/os-release | cut -d '=' -f 2)
 PKGMAN = $$(if [[ $(HOST_DISTRO) == "fedora" ]]; then echo "dnf" ; else echo "apg-get"; fi)
 MOLECULE_SCENARIO ?= default
 DEBIAN_RELEASE ?= bookworm
