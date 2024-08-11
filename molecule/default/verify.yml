@@ -4,7 +4,7 @@
 
 
 - name: Verify KVM guests
-  hosts: all
+  hosts: "all:!molecule_pxe"
   gather_facts: false
   vars_files:
     - ../../playbooks/vars.yml

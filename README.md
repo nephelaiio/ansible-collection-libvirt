@@ -49,6 +49,7 @@ where <node_object> follows the following json schema
         },
         "image": {
           "type": "url"
+          "default": ""
         },
         "dhcp": {
           "type": "boolean",
