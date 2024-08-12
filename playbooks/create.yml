@@ -75,7 +75,7 @@
         recurse: false
       register: _cache_query
 
-    - name: Cache platform images
+    - name: Cache plat form images
       ansible.builtin.get_url:
         url: "{{ item.url }}"
         dest: "{{ item.path }}"
@@ -84,7 +84,8 @@
         mode: 0600
       vars:
         _platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
-        _platform_image_urls: "{{ _libvirt_platforms | map(attribute='image') | unique }}"
+        _platform_image_defined: "{{ _libvirt_platforms | selectattr('image', 'defined') }}"
+        _platform_image_urls: "{{ _platform_image_defined | map(attribute='image') | unique }}"
         _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
         _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
         _platform_image_tuples: "{{ (['url'] | zip(_platform_image_urls)) | zip(['path'] | zip(_platform_image_paths)) }}"
@@ -126,7 +127,7 @@
 
     - name: Set platform facts
       ansible.builtin.set_fact:
-        guest_image: "{{ _platform.image }}"
+        guest_image: "{{ _platform.image | default('') }}"
         guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
         guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
         guest_disk_size: "{{ _platform.size | default('20G') }}"
@@ -159,20 +160,32 @@
           when: inventory_hostname not in guest_query.stdout_lines
           block:
             - name: Create KVM guest disks
-              ansible.builtin.copy:
-                remote_src: true
-                src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
+              when: guest_image != ''
+              block:
+                - name: Create KVM guest disks
+                  ansible.builtin.copy:
+                    src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
+                    dest: "{{ guest_disk_path }}"
+                    remote_src: true
+
+                - name: Resize KVM guest disks
+                  ansible.builtin.command:
+                    cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
+
+            - name: Create KVM pxe disks
+              ansible.builtin.command:
+                cmd: "qemu-img create -f qcow2 {{ guest_disk_path }} {{ guest_disk_size }}"
+              when: guest_image == ''
+
+            - name: Manage KVM disk permissions
+              ansible.builtin.file:
                 dest: "{{ guest_disk_path }}"
+                state: file
                 owner: "{{ (_host_os_family == 'Debian') | ternary('libvirt-qemu', 'qemu') }}"
                 group: kvm
                 mode: 0666
-                force: true
               vars:
                 _host_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
-
-            - name: Resize KVM guest disks
-              ansible.builtin.command:
-                cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
 
             - name: Create cloud-init tempdir
               ansible.builtin.tempfile:
@@ -286,3 +299,4 @@
     - name: Wait for connection
       ansible.builtin.wait_for_connection:
         timeout: "{{ _libvirt_conn_timeout }}"
+      when: _libvirt_image != ''

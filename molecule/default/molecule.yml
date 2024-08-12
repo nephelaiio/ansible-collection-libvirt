@@ -11,6 +11,9 @@ platforms:
     image: "${MOLECULE_KVM_IMAGE}"
   - name: libvirt-${MOLECULE_SCENARIO_NAME}-02
     image: "${MOLECULE_KVM_IMAGE}"
+  - name: libvirt-${MOLECULE_SCENARIO_NAME}-03
+    groups:
+      - molecule_pxe
 provisioner:
   name: ansible
   config_options:

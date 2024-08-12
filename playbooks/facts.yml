@@ -10,6 +10,12 @@
       ansible.builtin.set_fact:
         _libvirt_macaddr: "{{ _libvirt_mac_prefix | community.general.random_mac(seed=inventory_hostname) }}"
 
+    - name: Set image facts
+      ansible.builtin.set_fact:
+        _libvirt_image: "{{ _libvirt_instance_data.image | default('') }}"
+      vars:
+        _libvirt_instance_data: "{{ libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+
     - name: Set platform facts
       ansible.builtin.set_fact:
         _libvirt_platforms: "{{ _libvirt_platform_data | zip(_macaddr_list) | map(_libvirt_filter_combine) }}"
