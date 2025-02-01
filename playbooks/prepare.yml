@@ -9,12 +9,16 @@
       ansible.builtin.package:
         name:
           - qemu-kvm
-          - qemu-efi
+          - "{{ _qemu_efi }}"
           - libvirt-clients
           - libvirt-daemon-system
           - libvirt-daemon-system-systemd
           - python3-libvirt
           - xorriso
+      vars:
+        _is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
+        _is_noble: "{{ ansible_facts['distribution_version'] is version('24.04', '>=') }}"
+        _qemu_efi: "qemu-efi{{ '-aarch64' if (_is_ubuntu and _is_noble) else '' }}"
       when: ansible_os_family == 'Debian'
 
     - name: Install rpm package requirements
