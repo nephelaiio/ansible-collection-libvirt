@@ -2,12 +2,9 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
-
 - name: Verify KVM guests
   hosts: "all:!molecule_pxe"
   gather_facts: false
-  vars_files:
-    - ../../playbooks/vars.yml
   tasks:
     - name: Verify KVM guest attributes
       block:

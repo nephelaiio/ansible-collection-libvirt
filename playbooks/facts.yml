@@ -1,10 +1,11 @@
 ---
+- name: Load collection defaults
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+
 - name: Set platform facts
   hosts: "{{ libvirt_guests | default('localhost') }}:{{ libvirt_hosts | default('all') }}"
   gather_facts: false
   become: true
-  vars_files:
-    - vars.yml
   tasks:
     - name: Set mac address facts
       ansible.builtin.set_fact:

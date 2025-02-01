@@ -8,8 +8,6 @@
 - name: Configure guests
   hosts: "{{ libvirt_hosts | default('all') }}"
   become: true
-  vars_files:
-    - vars.yml
   tasks:
     - name: Verify required parameters
       ansible.builtin.assert:
@@ -97,8 +95,6 @@
   hosts: "{{ libvirt_guests | default('localhost') }}"
   gather_facts: false
   become: true
-  vars_files:
-    - vars.yml
   tasks:
     - name: Create guest SSH key
       become: false
@@ -250,8 +246,6 @@
 
 - name: Build Molecule instance config file
   hosts: localhost
-  vars_files:
-    - vars.yml
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
@@ -292,8 +286,6 @@
 - name: Wait for KVM guest initialization
   hosts: "{{ libvirt_guests | default('localhost') }}"
   gather_facts: false
-  vars_files:
-    - vars.yml
   tasks:
     - name: Wait for connection
       ansible.builtin.wait_for_connection:
