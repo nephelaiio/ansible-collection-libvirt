@@ -2,26 +2,18 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
-
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
-
 - name: Configure guests
-  hosts: "{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_hosts | default('localhost') }}"
   become: true
-  vars_files:
-    - vars.yml
   tasks:
-    - name: Verify required parameters
-      ansible.builtin.assert:
-        that: _libvirt_platforms is defined
-
     - name: Debug vardefs
       ansible.builtin.debug:
         msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
       vars:
-        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True)  }}"
+        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
     - name: Query libvirt pools
@@ -95,13 +87,10 @@
         label: "{{ item.url }} -> {{ item.path }}"
       loop: "{{ _platform_image_uncached }}"
 
-
 - name: Create KVM guests
-  hosts: "{{ _libvirt_guests }}"
+  hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
   become: true
-  vars_files:
-    - vars.yml
   tasks:
     - name: Create guest SSH key
       become: false
@@ -122,7 +111,7 @@
 
         - name: Register controller privkey facts
           ansible.builtin.set_fact:
-            guest_privkey:  "{{ _pubkey.filename }}"
+            guest_privkey: "{{ _pubkey.filename }}"
           delegate_facts: true
 
     - name: Set platform facts
@@ -135,7 +124,7 @@
         guest_user: "{{ _libvirt_user }}"
         guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
         guest_pubkey: "{{ _pubkey.public_key }}"
-        guest_privkey:  "{{ _pubkey.filename }}"
+        guest_privkey: "{{ _pubkey.filename }}"
         guest_hostname: "{{ inventory_hostname }}"
         guest_disk_format: qcow2
         guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
@@ -167,6 +156,7 @@
                     src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
                     dest: "{{ guest_disk_path }}"
                     remote_src: true
+                    mode: "u=rw,g=r,o="
 
                 - name: Resize KVM guest disks
                   ansible.builtin.command:
@@ -199,16 +189,19 @@
                   ansible.builtin.template:
                     src: "meta-data.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/meta-data"
+                    mode: "u=rw,g=r,o="
 
                 - name: Create cloud-init user data
                   ansible.builtin.template:
                     src: "user-data.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/user-data"
+                    mode: "u=rw,g=r,o="
 
                 - name: Create cloud-init network data
                   ansible.builtin.template:
                     src: "network-config.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/network-config"
+                    mode: "u=rw,g=r,o="
                   when: not guest_dhcp
 
                 - name: Create cloud-init iso
@@ -241,21 +234,18 @@
         ansible_host: "{{ item.ipaddr | ansible.utils.ipaddr('address') }}"
         ansible_user: "{{ _libvirt_user }}"
         ansible_ssh_private_key_file: "{{ _pubkey.filename }}"
-        ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
       loop_control:
         label: "{{ item.name }}"
       loop: "{{ _libvirt_platforms }}"
       run_once: true
 
-
 - name: Build Molecule instance config file
   hosts: localhost
-  vars_files:
-    - vars.yml
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
-        _platform_molecule: "{{ _platform_instances | map(_libvirt_filter_alias, _aliases) }}"
+        _platform_molecule: "{{ _platform_instances | map('nephelaiio.plugins.alias_keys', _aliases) }}"
       vars:
         _instance:
           port: 22
@@ -264,7 +254,7 @@
         _aliases:
           name: instance
           ipaddr: address
-        _platform_instances: "{{ [_instance] | product(_libvirt_platforms) | map(_libvirt_filter_combine) }}"
+        _platform_instances: "{{ [_instance] | product(_libvirt_platforms) | map('ansible.builtin.combine') }}"
 
     - name: Build molecule instance config
       when: molecule_instance_config is defined
@@ -289,12 +279,9 @@
           loop: "{{ _platform_molecule }}"
           become: true
 
-
 - name: Wait for KVM guest initialization
-  hosts: "{{ _libvirt_guests }}"
+  hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
-  vars_files:
-    - vars.yml
   tasks:
     - name: Wait for connection
       ansible.builtin.wait_for_connection:

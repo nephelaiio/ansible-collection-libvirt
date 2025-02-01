@@ -7,17 +7,17 @@ An [ansible collection](https://galaxy.ansible.com/ui/repo/published/nephelaiio/
 
 ## Collection hostgroups
 
-| Hostgroup                 |              Default | Description                  |
-|:--------------------------|---------------------:|:-----------------------------|
-| libvirt_hosts             |           'localhos' | Libvirt virtualization hosts |
-| libvirt_guests            |                'all' | Libvirt guests               |
+| Hostgroup      |     Default | Description                  |
+| :------------- | ----------: | :--------------------------- |
+| libvirt_hosts  | 'localhost' | Libvirt virtualization hosts |
+| libvirt_guests |       'all' | Libvirt guests               |
 
 ## Collection variables
 
-The following is the list of parameters intended for end-user manipulation: 
+The following is the list of parameters intended for end-user manipulation:
 
 | Parameter            |                                  Default | Description                    | Required |
-|:---------------------|-----------------------------------------:|:-------------------------------|:---------|
+| :------------------- | ---------------------------------------: | :----------------------------- | :------- |
 | libvirt_platforms    |                      [<platform_object>] | Libvirt guest list             | true     |
 | libvirt_address      |                        '172.31.252.1/24' | Libvirt host address           | false    |
 | libvirt_network      |                               'molecule' | Libvirt network name           | false    |
@@ -29,14 +29,14 @@ The following is the list of parameters intended for end-user manipulation:
 
 The following environment variables are also supported
 
-| Variable        |                                       Default | Description                    | Required |
-|:----------------|----------------------------------------------:|:-------------------------------|:---------|
-| LIBVIRT_PURGE   |                                         False | Purge libvirt storage pool     | false    |
-| LIBVIRT_LOGDIR  | '/var/lib/libvirt/{{ libvirt_network }}/logs' | Libvirt log directory          | false    |
+| Variable       |                                       Default | Description                | Required |
+| :------------- | --------------------------------------------: | :------------------------- | :------- |
+| LIBVIRT_PURGE  |                                         False | Purge libvirt storage pool | false    |
+| LIBVIRT_LOGDIR | '/var/lib/libvirt/{{ libvirt_network }}/logs' | Libvirt log directory      | false    |
 
 where <node_object> follows the following json schema
 
-``` json
+```json
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "array",
@@ -80,8 +80,8 @@ where <node_object> follows the following json schema
 
 ## Collection playbooks
 
-* nephelaiio.libvirt.create: Deploy network, storage pool and guests
-* nephelaiio.libvirt.destroy: Destroy guests, network and storage pool
+- nephelaiio.libvirt.create: Deploy network, storage pool and guests
+- nephelaiio.libvirt.destroy: Destroy guests, network and storage pool
 
 ## Testing
 
@@ -89,18 +89,18 @@ Please make sure your environment has [docker](https://www.docker.com) installed
 
 Collection is tested against the following host OS:
 
-  * Ubuntu Jammy
+- Ubuntu Jammy
 
 Collection is tested against the following guest OS:
 
-  * Ubuntu Noble
-  * Ubuntu Jammy
-  * Ubuntu Focal
-  * Debian Bookworm
-  * Alma Linux 8
-  * Alma Linux 9
-  * Rocky Linux 8
-  * Rocky Linux 9
+- Ubuntu Noble
+- Ubuntu Jammy
+- Ubuntu Focal
+- Debian Bookworm
+- Alma Linux 8
+- Alma Linux 9
+- Rocky Linux 8
+- Rocky Linux 9
 
 You can test the collection directly from sources using command `make test`
 

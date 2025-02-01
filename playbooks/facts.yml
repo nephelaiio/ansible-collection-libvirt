@@ -1,10 +1,11 @@
 ---
+- name: Load collection defaults
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+
 - name: Set platform facts
-  hosts: "{{ _libvirt_guests }}:{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_guests | default('all') }}:{{ libvirt_hosts | default('localhost') }}"
   gather_facts: false
   become: true
-  vars_files:
-    - vars.yml
   tasks:
     - name: Set mac address facts
       ansible.builtin.set_fact:
@@ -18,9 +19,9 @@
 
     - name: Set platform facts
       ansible.builtin.set_fact:
-        _libvirt_platforms: "{{ _libvirt_platform_data | zip(_macaddr_list) | map(_libvirt_filter_combine) }}"
+        _libvirt_platforms: "{{ _libvirt_platform_data | zip(_macaddr_list) | map('ansible.builtin.combine') }}"
       vars:
         _macaddr_tpl: '{ "macaddr": "%s" }'
         _platform_names: "{{ _libvirt_platform_data | map(attribute='name') }}"
         _macaddr_data: "{{ _platform_names | map('extract', hostvars, '_libvirt_macaddr') }}"
-        _macaddr_list: "{{ _macaddr_data | map(_libvirt_filter_format, _macaddr_tpl) | map(_libvirt_filter_from_json) }}"
+        _macaddr_list: "{{ _macaddr_data | map('nephelaiio.plugins.map_format', _macaddr_tpl) | map('ansible.builtin.from_json') }}"
