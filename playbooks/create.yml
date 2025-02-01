@@ -6,13 +6,9 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
 - name: Configure guests
-  hosts: "{{ libvirt_hosts | default('all') }}"
+  hosts: "{{ libvirt_hosts | default('localhost') }}"
   become: true
   tasks:
-    - name: Verify required parameters
-      ansible.builtin.assert:
-        that: _libvirt_platforms is defined
-
     - name: Debug vardefs
       ansible.builtin.debug:
         msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
@@ -92,7 +88,7 @@
       loop: "{{ _platform_image_uncached }}"
 
 - name: Create KVM guests
-  hosts: "{{ libvirt_guests | default('localhost') }}"
+  hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
   become: true
   tasks:
@@ -249,7 +245,7 @@
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
-        _platform_molecule: "{{ _platform_instances | map(_libvirt_filter_alias, _aliases) }}"
+        _platform_molecule: "{{ _platform_instances | map('nephelaiio.plugins.alias_keys', _aliases) }}"
       vars:
         _instance:
           port: 22
@@ -258,7 +254,7 @@
         _aliases:
           name: instance
           ipaddr: address
-        _platform_instances: "{{ [_instance] | product(_libvirt_platforms) | map(_libvirt_filter_combine) }}"
+        _platform_instances: "{{ [_instance] | product(_libvirt_platforms) | map('ansible.builtin.combine') }}"
 
     - name: Build molecule instance config
       when: molecule_instance_config is defined
@@ -284,7 +280,7 @@
           become: true
 
 - name: Wait for KVM guest initialization
-  hosts: "{{ libvirt_guests | default('localhost') }}"
+  hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
   tasks:
     - name: Wait for connection

@@ -1,48 +1,55 @@
 ---
 - name: Set collection defaults
-  hosts: "{{ libvirt_guests | default('localhost') }}:{{ libvirt_hosts | default('all') }}"
+  hosts: "{{ libvirt_guests | default('all') }}:{{ libvirt_hosts | default('localhost') }}"
   gather_facts: false
   tasks:
-    - name: Set collection defaults
+    - name: Verify platform vardef
+      ansible.builtin.assert:
+        that:
+          - libvirt_platforms is defined
+          - libvirt_platforms | length > 0
+
+    - name: Set guest defaults
       ansible.builtin.set_fact:
         # Overridable values
-        _libvirt_network: "{{ libvirt_network | default('molecule') }}"
-        _libvirt_address: "{{ libvirt_address | default('172.31.252.1/24') }}"
+        _libvirt_network: "{{ _network_name }}"
+        _libvirt_address: "{{ _network_addr }}"
         _libvirt_user: "{{ libvirt_user | default('molecule') }}"
         _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
-        _libvirt_pool: "{{ libvirt_pool | default(_libvirt_network) }}"
-        _libvirt_path: "{{ libvirt_path | default(_libvirt_default_pool_path) }}"
-        _libvirt_guestdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY', default=_libvirt_default_temp_path) }}"
+        _libvirt_pool: "{{ libvirt_pool | default(_network_name) }}"
+        _libvirt_path: "{{ libvirt_path | default(_path_pool) }}"
+        _libvirt_guestdir: "{{ _path_guest }}"
         _libvirt_purge: "{{ lookup('ansible.builtin.env', 'LIBVIRT_PURGE', default=False) }}"
-        _libvirt_logdir: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_libvirt_guestdir + '/logs') }}"
+        _libvirt_logdir: "{{ _path_log }}"
         _libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('90') }}"
+      vars:
+        _network_name: "{{ libvirt_network | default('molecule') }}"
+        _network_addr: "{{ libvirt_address | default('172.31.252.1/24') }}"
+        _path_pool: "/var/lib/libvirt/{{ _network_name }}"
+        _path_temp: "/tmp/{{ _network_name }}"
+        _path_guest: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY', default=_path_temp) }}"
+        _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_guest + '/logs') }}"
 
+    - name: Set host defaults
+      ansible.builtin.set_fact:
         # Derived values
         _libvirt_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
-        _libvirt_iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
-        _libvirt_iface_network: "{{ _libvirt_address | ansible.utils.ipaddr('network') }}"
-        _libvirt_iface_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
-        _libvirt_iface_netaddr: "{{ _libvirt_iface_network }}/{{ _libvirt_iface_prefix }}"
-        _libvirt_network_range: "{{ _libvirt_iface_netaddr | ansible.utils.usable_range }}"
-        _libvirt_network_free: "{{ _libvirt_network_range.usable_ips | difference([_libvirt_iface_network, _libvirt_iface_host]) }}"
-        _libvirt_network_usable: "{{ _libvirt_network_free | community.general.version_sort }}"
-        _libvirt_ipaddr_tpl: '{ "ipaddr": "%s" }'
-        _libvirt_ipaddr_data: "{{ _libvirt_network_usable[0 : libvirt_platforms | length] | map(_libvirt_filter_format, _libvirt_ipaddr_tpl) }}"
-        _libvirt_ipaddr_list: "{{ _libvirt_ipaddr_data | map(_libvirt_filter_from_json) }}"
-        _libvirt_index_tpl: '{ "index": "%s" }'
-        _libvirt_index_data: "{{ range(libvirt_platforms | length) | map(_libvirt_filter_format, _libvirt_index_tpl) }}"
-        _libvirt_index_list: "{{ _libvirt_index_data | map(_libvirt_filter_from_json) }}"
-        _libvirt_platform_ipaddrs: "{{ libvirt_platforms | zip(_libvirt_ipaddr_list) | map(_libvirt_filter_combine) }}"
-        _libvirt_platform_indices: "{{ _libvirt_platform_ipaddrs | zip(_libvirt_index_list) | map(_libvirt_filter_combine) }}"
-        _libvirt_platform_data: "{{ _libvirt_platform_indices }}"
+        _libvirt_platform_data: "{{ _platform_indices }}"
         _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
-
-        # Hardcoded values
-        _libvirt_filter_from_json: "ansible.builtin.from_json"
-        _libvirt_filter_format: "nephelaiio.plugins.map_format"
-        _libvirt_filter_combine: "ansible.builtin.combine"
-        _libvirt_filter_alias: "nephelaiio.plugins.alias_keys"
-        _libvirt_filter_select_attributes: "nephelaiio.plugins.select_attributes"
         _libvirt_mac_prefix: "52:54:00"
-        _libvirt_default_pool_path: "/var/lib/libvirt/{{ _libvirt_network }}"
-        _libvirt_default_temp_path: "/tmp/{{ _libvirt_network }}"
+      vars:
+        _iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
+        _iface_network: "{{ _libvirt_address | ansible.utils.ipaddr('network') }}"
+        _iface_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
+        _iface_netaddr: "{{ _iface_network }}/{{ _iface_prefix }}"
+        _network_range: "{{ _iface_netaddr | ansible.utils.usable_range }}"
+        _network_free: "{{ _network_range.usable_ips | difference([_iface_network, _iface_host]) }}"
+        _network_usable: "{{ _network_free | community.general.version_sort }}"
+        _ipaddr_data: "{{ _network_usable[0 : libvirt_platforms | length] | map('nephelaiio.plugins.map_format', _tpl_ipaddr) }}"
+        _ipaddr_list: "{{ _ipaddr_data | map('ansible.builtin.from_json') }}"
+        _tpl_index: '{ "index": "%s" }'
+        _tpl_ipaddr: '{ "ipaddr": "%s" }'
+        _index_data: "{{ range(libvirt_platforms | length) | map('nephelaiio.plugins.map_format', _tpl_index) }}"
+        _index_list: "{{ _index_data | map('ansible.builtin.from_json') }}"
+        _platform_ipaddrs: "{{ libvirt_platforms | zip(_ipaddr_list) | map('ansible.builtin.combine') }}"
+        _platform_indices: "{{ _platform_ipaddrs | zip(_index_list) | map('ansible.builtin.combine') }}"

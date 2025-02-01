@@ -3,13 +3,9 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
 - name: Destroy KVM guests
-  hosts: "{{ libvirt_hosts | default('all') }}"
+  hosts: "{{ libvirt_hosts | default('localhost') }}"
   become: true
   tasks:
-    - name: Verify required parameters
-      ansible.builtin.assert:
-        that: _libvirt_platforms is defined
-
     - name: Debug vardefs
       ansible.builtin.debug:
         msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
@@ -43,7 +39,7 @@
       loop: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
 
 - name: Destroy KVM resources
-  hosts: "{{ libvirt_hosts | default('all') }}"
+  hosts: "{{ libvirt_hosts | default('localhost') }}"
   become: true
   tasks:
     - name: Destroy KVM resources

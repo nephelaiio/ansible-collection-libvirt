@@ -1,6 +1,6 @@
 ---
 - name: Prepare KVM host
-  hosts: "{{ libvirt_hosts | default('all') }}"
+  hosts: "{{ libvirt_hosts | default('localhost') }}"
   become: true
   tasks:
     - name: Install deb package requirements
@@ -22,7 +22,7 @@
     - name: Install rpm package requirements
       ansible.builtin.package:
         name:
-          - qemu
+          - qemu-kvm
           - xfsprogs
           - libvirt-client
           - libvirt-daemon
