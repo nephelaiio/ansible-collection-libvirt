@@ -14,7 +14,7 @@ ALMA_KVM_IMAGE = https://repo.almalinux.org/almalinux/${EL_RELEASE}/cloud/x86_64
 ROCKY_KVM_IMAGE = https://dl.rockylinux.org/pub/rocky/${EL_RELEASE}/images/x86_64/Rocky-${EL_RELEASE}-GenericCloud-Base.latest.x86_64.qcow2
 MOLECULE_KVM_IMAGE := $(UBUNTU_KVM_IMAGE)
 GALAXY_API_KEY ?=
-GITHUB_REPOSITORY ?= $$(git config --get remote.origin.url | cut -d: -f 2 | cut -d. -f 1)
+GITHUB_REPOSITORY ?= $$(git config --get remote.origin.url | cut -d':' -f 2 | cut -d. -f 1)
 GITHUB_ORG = $$(echo ${GITHUB_REPOSITORY} | cut -d/ -f 1)
 GITHUB_REPO = $$(echo ${GITHUB_REPOSITORY} | cut -d/ -f 2)
 REQUIREMENTS = requirements.yml
@@ -53,9 +53,6 @@ alma:
 		MOLECULE_KVM_IMAGE=${ALMA_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
-alma8:
-	make alma EL_RELEASE=8 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
-
 alma9:
 	make alma EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -63,9 +60,6 @@ rocky:
 	make create prepare \
 		MOLECULE_KVM_IMAGE=${ROCKY_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
-
-rocky8:
-	make rocky EL_RELEASE=8 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 rocky9:
 	make rocky EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
@@ -76,6 +70,7 @@ test: lint
 
 install:
 	@type poetry >/dev/null 2>/dev/null 2>/dev/null || pip3 install poetry
+	@poetry self add poetry-plugin-export
 	@type yq >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y yq
 	@type expect >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y expect
 	@type nmcli >/dev/null 2>/dev/null || sudo ${PKGMAN} install -y $$(if [[ "${HOST_DISTRO}" == "fedora" ]]; then echo NetworkManager; else echo network-manager; fi)
@@ -134,4 +129,4 @@ version:
 	@poetry run molecule --version
 
 debug: version
-	@poetry export --dev --without-hashes
+	@poetry export --dev --without-hashes || exit 0

@@ -39,9 +39,7 @@ jobs:
           - ubuntu2004
           - debian12
           - alma9
-          - alma8
           - rocky9
-          - rocky8
         scenario:
           - default
         include:
@@ -54,7 +52,7 @@ jobs:
       - name: Set up python 3
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Update ubuntu repositories
         run: sudo apt-get update
@@ -68,17 +66,17 @@ jobs:
       - name: Build test scenario
         run: make ${{ matrix.os }}
         env:
-          PY_COLORS: '1'
-          ANSIBLE_FORCE_COLOR: '1'
-          MOLECULE_LOGDIR: '/tmp/logs'
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
+          MOLECULE_LOGDIR: "/tmp/logs"
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
 
       - name: Run verification tests
         run: make verify
         env:
-          PY_COLORS: '1'
-          ANSIBLE_FORCE_COLOR: '1'
-          MOLECULE_LOGDIR: '/tmp/logs'
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
+          MOLECULE_LOGDIR: "/tmp/logs"
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
 
       - name: Upload install logs

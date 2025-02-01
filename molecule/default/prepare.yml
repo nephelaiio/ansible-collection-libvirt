@@ -1,5 +1,5 @@
 ---
-- name: Prepare
+- name: Prepare package repositories
   hosts: "all:!molecule_pxe"
   become: true
   gather_facts: true
