@@ -1,6 +1,6 @@
 ---
 - name: Set platform facts
-  hosts: "{{ _libvirt_guests }}:{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_guests | default('localhost') }}:{{ libvirt_hosts | default('all') }}"
   gather_facts: false
   become: true
   vars_files:

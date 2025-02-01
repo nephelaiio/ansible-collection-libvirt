@@ -1,0 +1,4 @@
+---
+warn_list:
+  - run-once
+  - no-changed-when

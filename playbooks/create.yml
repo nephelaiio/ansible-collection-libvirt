@@ -6,7 +6,7 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
 - name: Configure guests
-  hosts: "{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_hosts | default('all') }}"
   become: true
   vars_files:
     - vars.yml
@@ -19,7 +19,7 @@
       ansible.builtin.debug:
         msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
       vars:
-        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True)  }}"
+        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
     - name: Query libvirt pools
@@ -94,7 +94,7 @@
       loop: "{{ _platform_image_uncached }}"
 
 - name: Create KVM guests
-  hosts: "{{ _libvirt_guests }}"
+  hosts: "{{ libvirt_guests | default('localhost') }}"
   gather_facts: false
   become: true
   vars_files:
@@ -164,6 +164,7 @@
                     src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
                     dest: "{{ guest_disk_path }}"
                     remote_src: true
+                    mode: "u=rw,g=r,o="
 
                 - name: Resize KVM guest disks
                   ansible.builtin.command:
@@ -196,16 +197,19 @@
                   ansible.builtin.template:
                     src: "meta-data.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/meta-data"
+                    mode: "u=rw,g=r,o="
 
                 - name: Create cloud-init user data
                   ansible.builtin.template:
                     src: "user-data.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/user-data"
+                    mode: "u=rw,g=r,o="
 
                 - name: Create cloud-init network data
                   ansible.builtin.template:
                     src: "network-config.yml.j2"
                     dest: "{{ libvirt_tmpdir.path }}/network-config"
+                    mode: "u=rw,g=r,o="
                   when: not guest_dhcp
 
                 - name: Create cloud-init iso
@@ -286,7 +290,7 @@
           become: true
 
 - name: Wait for KVM guest initialization
-  hosts: "{{ _libvirt_guests }}"
+  hosts: "{{ libvirt_guests | default('localhost') }}"
   gather_facts: false
   vars_files:
     - vars.yml

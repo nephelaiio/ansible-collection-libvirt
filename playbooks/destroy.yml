@@ -3,7 +3,7 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
 - name: Destroy KVM guests
-  hosts: "{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_hosts | default('all') }}"
   become: true
   vars_files:
     - vars.yml
@@ -16,7 +16,7 @@
       ansible.builtin.debug:
         msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
       vars:
-        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True)  }}"
+        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
     - name: Query active KVM guests
@@ -45,7 +45,7 @@
       loop: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
 
 - name: Destroy KVM resources
-  hosts: "{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_hosts | default('all') }}"
   become: true
   vars_files:
     - vars.yml

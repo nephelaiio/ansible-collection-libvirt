@@ -1,9 +1,7 @@
 ---
 - name: Prepare KVM host
-  hosts: "{{ _libvirt_hosts }}"
+  hosts: "{{ libvirt_hosts | default('all') }}"
   become: true
-  vars_files:
-    - vars.yml
   tasks:
     - name: Install deb package requirements
       ansible.builtin.package:
