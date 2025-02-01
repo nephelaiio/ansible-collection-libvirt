@@ -2,7 +2,6 @@
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
-
 - name: Destroy KVM guests
   hosts: "{{ _libvirt_hosts }}"
   become: true
@@ -44,7 +43,6 @@
       vars:
         _basenames: "{{ _libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
       loop: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
-
 
 - name: Destroy KVM resources
   hosts: "{{ _libvirt_hosts }}"

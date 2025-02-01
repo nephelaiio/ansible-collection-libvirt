@@ -2,10 +2,8 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
-
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
-
 
 - name: Configure guests
   hosts: "{{ _libvirt_hosts }}"
@@ -95,7 +93,6 @@
         label: "{{ item.url }} -> {{ item.path }}"
       loop: "{{ _platform_image_uncached }}"
 
-
 - name: Create KVM guests
   hosts: "{{ _libvirt_guests }}"
   gather_facts: false
@@ -122,7 +119,7 @@
 
         - name: Register controller privkey facts
           ansible.builtin.set_fact:
-            guest_privkey:  "{{ _pubkey.filename }}"
+            guest_privkey: "{{ _pubkey.filename }}"
           delegate_facts: true
 
     - name: Set platform facts
@@ -135,7 +132,7 @@
         guest_user: "{{ _libvirt_user }}"
         guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
         guest_pubkey: "{{ _pubkey.public_key }}"
-        guest_privkey:  "{{ _pubkey.filename }}"
+        guest_privkey: "{{ _pubkey.filename }}"
         guest_hostname: "{{ inventory_hostname }}"
         guest_disk_format: qcow2
         guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
@@ -241,12 +238,11 @@
         ansible_host: "{{ item.ipaddr | ansible.utils.ipaddr('address') }}"
         ansible_user: "{{ _libvirt_user }}"
         ansible_ssh_private_key_file: "{{ _pubkey.filename }}"
-        ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
       loop_control:
         label: "{{ item.name }}"
       loop: "{{ _libvirt_platforms }}"
       run_once: true
-
 
 - name: Build Molecule instance config file
   hosts: localhost
@@ -288,7 +284,6 @@
             label: "{{ item.instance }}"
           loop: "{{ _platform_molecule }}"
           become: true
-
 
 - name: Wait for KVM guest initialization
   hosts: "{{ _libvirt_guests }}"

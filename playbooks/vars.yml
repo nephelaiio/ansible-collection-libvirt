@@ -34,11 +34,11 @@ _libvirt_platform_data: "{{ _libvirt_platform_indices }}"
 _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
 
 # Hardcoded values
-_libvirt_filter_from_json: 'ansible.builtin.from_json'
-_libvirt_filter_format: 'nephelaiio.plugins.map_format'
-_libvirt_filter_combine: 'ansible.builtin.combine'
-_libvirt_filter_alias: 'nephelaiio.plugins.alias_keys'
-_libvirt_filter_select_attributes: 'nephelaiio.plugins.select_attributes'
-_libvirt_mac_prefix: '52:54:00'
+_libvirt_filter_from_json: "ansible.builtin.from_json"
+_libvirt_filter_format: "nephelaiio.plugins.map_format"
+_libvirt_filter_combine: "ansible.builtin.combine"
+_libvirt_filter_alias: "nephelaiio.plugins.alias_keys"
+_libvirt_filter_select_attributes: "nephelaiio.plugins.select_attributes"
+_libvirt_mac_prefix: "52:54:00"
 _libvirt_default_pool_path: "/var/lib/libvirt/{{ _libvirt_network }}"
 _libvirt_default_temp_path: "/tmp/{{ _libvirt_network }}"
