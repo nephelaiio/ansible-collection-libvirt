@@ -39,9 +39,7 @@ jobs:
           - ubuntu2004
           - debian12
           - alma9
-          - alma8
           - rocky9
-          - rocky8
         scenario:
           - default
         include:
