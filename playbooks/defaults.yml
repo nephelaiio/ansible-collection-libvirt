@@ -1,6 +1,7 @@
 ---
 - name: Set collection defaults
   hosts: "{{ libvirt_guests | default('localhost') }}:{{ libvirt_hosts | default('all') }}"
+  gather_facts: false
   tasks:
     - name: Set collection defaults
       ansible.builtin.set_fact:
