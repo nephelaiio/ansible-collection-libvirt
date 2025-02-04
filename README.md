@@ -85,11 +85,9 @@ where <node_object> follows the following json schema
 
 ## Testing
 
-Please make sure your environment has [docker](https://www.docker.com) installed in order to run role validation tests.
-
 Collection is tested against the following host OS:
 
-- Ubuntu Jammy
+- Ubuntu Noble
 
 Collection is tested against the following guest OS:
 
@@ -97,9 +95,7 @@ Collection is tested against the following guest OS:
 - Ubuntu Jammy
 - Ubuntu Focal
 - Debian Bookworm
-- Alma Linux 8
 - Alma Linux 9
-- Rocky Linux 8
 - Rocky Linux 9
 
 You can test the collection directly from sources using command `make test`
