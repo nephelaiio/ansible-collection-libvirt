@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
-  "packages": ["make@latest", "python@3.12.8"],
+  "packages": ["python@latest", "poetry@latest"],
   "env": {
     "LANG": "C.UTF-8"
   },

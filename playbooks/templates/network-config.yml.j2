@@ -12,6 +12,4 @@ network:
           via: {{ guest_gateway }}
       nameservers:
         addresses:
-          {% for _server in guest_resolvers -%}
-          - {{ _server }}
-          {%- endfor %}
+          {{ guest_resolvers | to_nice_yaml | indent(width=10, first=False) }}
