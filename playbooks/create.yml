@@ -133,6 +133,7 @@
         guest_cpu: "{{ _platform.cpu | default(2) }}"
         guest_ipaddr: "{{ _platform.ipaddr }}/{{ _libvirt_prefix }}"
         guest_macaddr: "{{ _platform.macaddr }}"
+        guest_dns: "{{ _platform.dns | default(_libvirt_resolvers) }}"
       vars:
         _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
 
