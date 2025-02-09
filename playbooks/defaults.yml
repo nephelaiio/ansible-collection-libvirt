@@ -22,6 +22,7 @@
         _libvirt_purge: "{{ lookup('ansible.builtin.env', 'LIBVIRT_PURGE', default=False) }}"
         _libvirt_logdir: "{{ _path_log }}"
         _libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('90') }}"
+        _libvirt_resolvers: "{{ [libvirt_resolvers | default(['1.1.1.1', '8.8.8.8'])] | flatten }}"
       vars:
         _network_name: "{{ libvirt_network | default('molecule') }}"
         _network_addr: "{{ libvirt_address | default('172.31.252.1/24') }}"

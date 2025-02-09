@@ -21,6 +21,7 @@ The following is the list of parameters intended for end-user manipulation:
 | libvirt_platforms    |                      [<platform_object>] | Libvirt guest list             | true     |
 | libvirt_address      |                        '172.31.252.1/24' | Libvirt host address           | false    |
 | libvirt_network      |                               'molecule' | Libvirt network name           | false    |
+| libvirt_resolvers    |                   ['1.1.1.1', '8.8.8.8'] | Libvirt network resolvers      | false    |
 | libvirt_user         |                               'molecule' | OS user for guest access       | false    |
 | libvirt_pass         |                               'molecule' | OS password for guest access   | false    |
 | libvirt_pool         |                  '{{ libvirt_network }}' | Libvirt storage pool name      | false    |
@@ -85,11 +86,9 @@ where <node_object> follows the following json schema
 
 ## Testing
 
-Please make sure your environment has [docker](https://www.docker.com) installed in order to run role validation tests.
-
 Collection is tested against the following host OS:
 
-- Ubuntu Jammy
+- Ubuntu Noble
 
 Collection is tested against the following guest OS:
 
@@ -97,9 +96,7 @@ Collection is tested against the following guest OS:
 - Ubuntu Jammy
 - Ubuntu Focal
 - Debian Bookworm
-- Alma Linux 8
 - Alma Linux 9
-- Rocky Linux 8
 - Rocky Linux 9
 
 You can test the collection directly from sources using command `make test`
