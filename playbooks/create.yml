@@ -67,7 +67,7 @@
         recurse: false
       register: _cache_query
 
-    - name: Cache plat form images
+    - name: Cache platform images
       ansible.builtin.get_url:
         url: "{{ item.url }}"
         dest: "{{ item.path }}"
