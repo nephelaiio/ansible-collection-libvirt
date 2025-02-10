@@ -69,6 +69,9 @@
 
     - name: Set platform image facts
       ansible.builtin.set_fact:
+        platform_image_cached: "{{ _platform_image_cached }}"
+        platform_image_uncached: "{{ _platform_image_uncached }}"
+      vars:
         _platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
         _platform_image_defined: "{{ _libvirt_platforms | selectattr('image', 'defined') }}"
         _platform_image_urls: "{{ _platform_image_defined | map(attribute='image') | unique }}"
@@ -79,12 +82,12 @@
         _platform_image_uncached: "{{ _platform_image_data | rejectattr('path', 'in', _platform_image_cached) }}"
 
     - name: Debug cached images
-      ansible.buitin.debug:
-        msg: "{{ _platform_image_cached }}"
+      ansible.builtin.debug:
+        msg: "{{ platform_image_cached }}"
 
     - name: Debug uncached images
-      ansible.buitin.debug:
-        msg: "{{ _platform_image_uncached }}"
+      ansible.builtin.debug:
+        msg: "{{ platform_image_uncached }}"
 
     - name: Cache platform images
       ansible.builtin.get_url:
@@ -95,7 +98,7 @@
         mode: 0600
       loop_control:
         label: "{{ item.url }} -> {{ item.path }}"
-      loop: "{{ _platform_image_uncached }}"
+      loop: "{{ platform_image_uncached }}"
 
 - name: Create KVM guests
   hosts: "{{ libvirt_guests | default('all') }}"
