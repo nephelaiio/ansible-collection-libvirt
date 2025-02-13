@@ -11,8 +11,8 @@
           - libvirt-clients
           - libvirt-daemon-system
           - libvirt-daemon-system-systemd
-          - python3-libvirt
           - xorriso
+          - network-manager
       vars:
         _is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
         _is_noble: "{{ ansible_facts['distribution_version'] is version('24.04', '>=') }}"
@@ -26,6 +26,6 @@
           - xfsprogs
           - libvirt-client
           - libvirt-daemon
-          - python3-libvirt
           - xorriso
+          - NetworkManager
       when: ansible_os_family == 'RedHat'
