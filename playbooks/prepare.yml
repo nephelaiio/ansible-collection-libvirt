@@ -4,7 +4,7 @@
   become: true
   tasks:
     - name: Install deb package requirements
-      ansible.builtin.package:
+      ansible.builtin.apt:
         name:
           - qemu-kvm
           - "{{ _qemu_efi }}"
@@ -13,6 +13,7 @@
           - libvirt-daemon-system-systemd
           - xorriso
           - network-manager
+        update_cache: true
       vars:
         _is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
         _is_noble: "{{ ansible_facts['distribution_version'] is version('24.04', '>=') }}"
