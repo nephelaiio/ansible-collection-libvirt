@@ -17,4 +17,6 @@ repository: http://github.com/nephelaiio/ansible-collection-libvirt
 documentation: http://github.com/nephelaiio/ansible-collection-libvirt
 homepage: http://github.com/nephelaiio/ansible-collection-libvirt
 issues: http://github.com/nephelaiio/ansible-collection-libvirt/issues
-build_ignore: []
+build_ignore:
+  - .devbox
+  - .venv
