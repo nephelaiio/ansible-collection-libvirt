@@ -10,8 +10,7 @@
     "gnupg@latest",
     "xfsprogs@latest",
     "gnumake@latest",
-    "yq@latest",
-    "ansible-lint@latest"
+    "yq@latest"
   ],
   "shell": {
     "init_hook": [],
