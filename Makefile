@@ -72,7 +72,7 @@ install:
 	@sudo ${PKGMAN} install -y $$(if [[ "${HOST_DISTRO}" == "fedora" ]]; then echo libvirt-devel; else echo libvirt-dev; fi)
 	@poetry install --no-root
 
-lint: requirements
+lint:
 	poetry run yamllint .
 	poetry run ansible-lint playbooks/
 
