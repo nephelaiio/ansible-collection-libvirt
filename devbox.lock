@@ -65,6 +65,34 @@
         }
       }
     },
+    "glibcLocalesUtf8@latest": {
+      "last_modified": "2025-02-07T11:26:36Z",
+      "resolved": "github:NixOS/nixpkgs/d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d#glibcLocalesUtf8",
+      "source": "devbox-search",
+      "version": "2.40-66",
+      "systems": {
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ywws5rbfs39g6mb24540swa622sp5qk3-glibc-locales-2.40-66",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ywws5rbfs39g6mb24540swa622sp5qk3-glibc-locales-2.40-66"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mdqcp49cqf8fcb1jq3y4v8hn3lc8zm71-glibc-locales-2.40-66",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mdqcp49cqf8fcb1jq3y4v8hn3lc8zm71-glibc-locales-2.40-66"
+        }
+      }
+    },
     "gnumake@latest": {
       "last_modified": "2025-01-31T04:26:24Z",
       "resolved": "github:NixOS/nixpkgs/9189ac18287c599860e878e905da550aa6dec1cd#gnumake",
