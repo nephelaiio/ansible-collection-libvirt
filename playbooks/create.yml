@@ -67,19 +67,27 @@
         recurse: false
       register: _cache_query
 
+    - name: Set image facts
+      ansible.builtin.set_fact:
+        platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
+        platform_image_urls: "{{ _platform_image_defined | map(attribute='image') | unique }}"
+      vars:
+        _platform_image_defined: "{{ _libvirt_platforms | selectattr('image', 'defined') }}"
+
+    - name: Debug platform urls
+      ansible.builtin.debug:
+        var: platform_image_urls
+
     - name: Set platform image facts
       ansible.builtin.set_fact:
-        platform_image_cached: "{{ _platform_image_cached }}"
         platform_image_uncached: "{{ _platform_image_uncached }}"
       vars:
-        _platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
-        _platform_image_defined: "{{ _libvirt_platforms | selectattr('image', 'defined') }}"
-        _platform_image_urls: "{{ _platform_image_defined | map(attribute='image') | unique }}"
-        _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
-        _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
-        _platform_image_tuples: "{{ (['url'] | zip(_platform_image_urls)) | zip(['path'] | zip(_platform_image_paths)) }}"
-        _platform_image_data: "{{ _platform_image_tuples | map('community.general.dict') }}"
-        _platform_image_uncached: "{{ _platform_image_data | rejectattr('path', 'in', _platform_image_cached) }}"
+        _to_dict: nephelaiio.plugins.to_dict
+        _platform_image_basenames: "{{ platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
+        _platform_image_paths: "{{ [_libvirt_path] | product(_platform_image_basenames) | map('join', '/') }}"
+        _platform_image_tuples: "{{ (platform_image_urls | map(_to_dict, 'url')) | zip(_platform_image_paths | map(_to_dict, 'path')) }}"
+        _platform_image_data: "{{ _platform_image_tuples | map('combine') }}"
+        _platform_image_uncached: "{{ _platform_image_data | rejectattr('path', 'in', platform_image_cached) }}"
 
     - name: Debug cached images
       ansible.builtin.debug:
