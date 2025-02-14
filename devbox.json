@@ -10,14 +10,8 @@
     "gnupg@latest",
     "xfsprogs@latest",
     "gnumake@latest",
-    "yq@latest",
-    "glibc@latest",
-    "glibcLocales@latest",
-    "glibcLocalesUtf8@latest"
+    "yq@latest"
   ],
-  "env": {
-    "LOCALE_ARCHIVE": "${pkgs.glibcLocales}/lib/locale/locale-archive"
-  },
   "shell": {
     "init_hook": [],
     "scripts": {}

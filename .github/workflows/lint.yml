@@ -14,8 +14,11 @@ jobs:
       - name: Check out the codebase
         uses: actions/checkout@v4
 
-      - name: Debug locale
-        run: locale -a
+      - name: Update apt cache
+        run: sudo apt-get update
+
+      - name: Install build-essentials
+        run: sudo apt-get install -y build-essential
 
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.12.0
