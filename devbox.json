@@ -16,7 +16,7 @@
     "glibcLocalesUtf8@latest"
   ],
   "env": {
-    "LANG": "C.UTF-8"
+    "LOCALE_ARCHIVE": "${pkgs.glibcLocales}/lib/locale/locale-archive"
   },
   "shell": {
     "init_hook": [],
