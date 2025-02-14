@@ -65,6 +65,104 @@
         }
       }
     },
+    "glibc@latest": {
+      "last_modified": "2025-02-09T21:53:45Z",
+      "resolved": "github:NixOS/nixpkgs/b2243f41e860ac85c0b446eadc6930359b294e79#glibc",
+      "source": "devbox-search",
+      "version": "2.40-66",
+      "systems": {
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4j0ghmjl1hia5h4fx9szjz0zzlr4ck9b-glibc-2.40-66",
+              "default": true
+            },
+            {
+              "name": "bin",
+              "path": "/nix/store/hpfy3n69wpzh1bzdb49y9rpjmf7m6sgy-glibc-2.40-66-bin",
+              "default": true
+            },
+            {
+              "name": "static",
+              "path": "/nix/store/ijfl61jv70bwc9a0b7lc6bh85c3qhjrd-glibc-2.40-66-static"
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/j0hcjywnpgq1gsfljh44xmsj7plri3i1-glibc-2.40-66-debug"
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/dxi5fb30gkg2jdiabykbxl4bb95x6c13-glibc-2.40-66-dev"
+            },
+            {
+              "name": "getent",
+              "path": "/nix/store/g52b9y9wsxkhiszjdhpqhsil310p9a5i-glibc-2.40-66-getent"
+            }
+          ],
+          "store_path": "/nix/store/4j0ghmjl1hia5h4fx9szjz0zzlr4ck9b-glibc-2.40-66"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/81mi7m3k3wsiz9rrrg636sx21psj20hc-glibc-2.40-66",
+              "default": true
+            },
+            {
+              "name": "bin",
+              "path": "/nix/store/9lcg6rsqbmx6s35jzy86b86pkj0qhxjl-glibc-2.40-66-bin",
+              "default": true
+            },
+            {
+              "name": "static",
+              "path": "/nix/store/9la5sn6yyrclzhbk5xglfwda6pzhacmg-glibc-2.40-66-static"
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/2d9wmzpzvshkmrbfilzwmkd6y2g3wg9j-glibc-2.40-66-debug"
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/6aci60gk5wj4bjj1rygzbkc6ximmsm17-glibc-2.40-66-dev"
+            },
+            {
+              "name": "getent",
+              "path": "/nix/store/b8k1qkmfw1vk075zj8yzpl3b4y82si1g-glibc-2.40-66-getent"
+            }
+          ],
+          "store_path": "/nix/store/81mi7m3k3wsiz9rrrg636sx21psj20hc-glibc-2.40-66"
+        }
+      }
+    },
+    "glibcLocales@latest": {
+      "last_modified": "2025-02-07T11:26:36Z",
+      "resolved": "github:NixOS/nixpkgs/d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d#glibcLocales",
+      "source": "devbox-search",
+      "version": "2.40-66",
+      "systems": {
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/msl6h7i0mgzayw4icb58hccfkh9672bl-glibc-locales-2.40-66",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/msl6h7i0mgzayw4icb58hccfkh9672bl-glibc-locales-2.40-66"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/p1fn0y9zbq7fng8cn49cvinqqh47slax-glibc-locales-2.40-66",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/p1fn0y9zbq7fng8cn49cvinqqh47slax-glibc-locales-2.40-66"
+        }
+      }
+    },
     "glibcLocalesUtf8@latest": {
       "last_modified": "2025-02-07T11:26:36Z",
       "resolved": "github:NixOS/nixpkgs/d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d#glibcLocalesUtf8",

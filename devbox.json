@@ -11,6 +11,8 @@
     "xfsprogs@latest",
     "gnumake@latest",
     "yq@latest",
+    "glibc@latest",
+    "glibcLocales@latest",
     "glibcLocalesUtf8@latest"
   ],
   "shell": {
