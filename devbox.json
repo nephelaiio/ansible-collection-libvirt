@@ -12,6 +12,9 @@
     "gnumake@latest",
     "yq@latest"
   ],
+  "env": {
+    "LANG": "C.UTF-8"
+  },
   "shell": {
     "init_hook": [],
     "scripts": {}
