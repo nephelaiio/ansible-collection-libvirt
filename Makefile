@@ -73,8 +73,8 @@ install:
 	@poetry install --no-root
 
 lint: requirements
-	pipx run yamllint .
-	pipx run ansible-lint playbooks/
+	poetry run yamllint .
+	poetry run ansible-lint playbooks/
 
 requirements: install
 	@rm -rf ${ROLE_DIR}/*
