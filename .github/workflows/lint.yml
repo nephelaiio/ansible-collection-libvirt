@@ -22,3 +22,5 @@ jobs:
 
       - name: Lint code
         run: devbox run -- make lint
+        env:
+          DEVBOX_USE_VERSION: 0.13.1

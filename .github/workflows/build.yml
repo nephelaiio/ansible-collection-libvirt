@@ -21,3 +21,5 @@ jobs:
 
       - name: Build collection
         run: devbox run -- make build
+        env:
+          DEVBOX_USE_VERSION: 0.13.1

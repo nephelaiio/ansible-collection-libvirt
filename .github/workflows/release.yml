@@ -22,4 +22,5 @@ jobs:
       - name: Release collection
         run: devbox run -- make publish
         env:
+          DEVBOX_USE_VERSION: 0.13.1
           GALAXY_API_KEY: "${{ secrets.GALAXY_API_KEY }}"

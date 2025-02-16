@@ -36,20 +36,20 @@ jobs:
 
       - name: Install requirements
         run: devbox run -- make requirements
+        env:
+          DEVBOX_USE_VERSION: 0.13.1
 
       - name: Build test scenario
         run: devbox run -- make ${{ matrix.os }}
         env:
-          PY_COLORS: "1"
-          ANSIBLE_FORCE_COLOR: "1"
+          DEVBOX_USE_VERSION: 0.13.1
           MOLECULE_LOGDIR: "/tmp/logs"
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
 
       - name: Run verification tests
         run: devbox run -- make verify
         env:
-          PY_COLORS: "1"
-          ANSIBLE_FORCE_COLOR: "1"
+          DEVBOX_USE_VERSION: 0.13.1
           MOLECULE_LOGDIR: "/tmp/logs"
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
 

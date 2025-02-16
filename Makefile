@@ -26,6 +26,9 @@ COLLECTION_VERSION = $$(yq '.version' < galaxy.yml -r)
 
 all: install version lint test
 
+shell:
+	DEVBOX_USE_VERSION=0.13.1 devbox shell
+
 ubuntu:
 	make create prepare \
 		MOLECULE_KVM_IMAGE=${UBUNTU_KVM_IMAGE} \
