@@ -1,5 +1,9 @@
 ---
 name: release
+
+env:
+  DEVBOX_VERSION: ${{ vars.DEVBOX_VERSION }}
+
 on:
   push:
     tags:
