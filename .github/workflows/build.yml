@@ -1,5 +1,9 @@
 ---
 name: build
+
+env:
+  DEVBOX_VERSION: ${{ vars.DEVBOX_VERSION }}
+
 on:
   pull_request:
     branches:
@@ -18,8 +22,6 @@ jobs:
 
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.12.0
-        with:
-          devbox-version: 0.13.7
 
       - name: Build collection
         run: devbox run -- make build

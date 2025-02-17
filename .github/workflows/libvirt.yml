@@ -1,6 +1,9 @@
 ---
 name: libvirt
 
+env:
+  DEVBOX_VERSION: ${{ vars.DEVBOX_VERSION }}
+
 on:
   pull_request:
     branches:
@@ -36,8 +39,6 @@ jobs:
 
       - name: Install requirements
         run: devbox run -- make requirements
-        with:
-          devbox-version: 0.13.7
 
       - name: Build test scenario
         run: devbox run -- make ${{ matrix.os }}
