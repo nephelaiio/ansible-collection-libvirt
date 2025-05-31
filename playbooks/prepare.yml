@@ -9,6 +9,7 @@
           - qemu-kvm
           - "{{ _qemu_efi }}"
           - libvirt-clients
+          - libvirt-dev
           - libvirt-daemon-system
           - libvirt-daemon-system-systemd
           - xorriso
