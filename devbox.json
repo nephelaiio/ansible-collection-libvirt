@@ -5,6 +5,7 @@
     "poetry@latest",
     "poetryPlugins.poetry-plugin-export@latest",
     "libvirt@latest",
+    "python311Packages.libvirt",
     "networkmanager@latest",
     "expect@latest",
     "gnupg@latest",
