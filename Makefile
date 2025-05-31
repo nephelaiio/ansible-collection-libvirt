@@ -23,7 +23,7 @@ COLLECTION_NAMESPACE = $$(yq '.namespace' < galaxy.yml -r)
 COLLECTION_NAME = $$(yq '.name' < galaxy.yml -r)
 COLLECTION_VERSION = $$(yq '.version' < galaxy.yml -r)
 
-all: install version lint test
+all: version lint test
 
 shell:
 	devbox shell
@@ -68,34 +68,31 @@ rocky9:
 
 test: lint
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
-
-install:
-	@poetry install --no-root
+	molecule $@ -s ${MOLECULE_SCENARIO}
 
 lint: requirements
-	poetry run yamllint .
-	poetry run ansible-lint playbooks/
+	yamllint .
+	ansible-lint playbooks/
 
-requirements: install
+requirements:
 	@rm -rf ${ROLE_DIR}/*
 	@python --version
 	@if [ -f ${ROLE_FILE} ]; then \
-		poetry run ansible-galaxy role install \
+		ansible-galaxy role install \
 			--force --no-deps \
 			--roles-path ${ROLE_DIR} \
 			--role-file ${ROLE_FILE}; \
 	fi
-	@poetry run ansible-galaxy collection install \
+	@ansible-galaxy collection install \
 		--force-with-deps .
 	@\find ./ -name "*.ymle*" -delete
 
 build: requirements
-	@poetry run ansible-galaxy collection build --force
+	@ansible-galaxy collection build --force
 
 dependency create prepare converge idempotence side-effect verify destroy reset list:
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
+	molecule $@ -s ${MOLECULE_SCENARIO}
 
 ifeq (login,$(firstword $(MAKECMDGOALS)))
     LOGIN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -104,25 +101,22 @@ endif
 
 login:
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}
+	molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}
 
 purge:
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
 	LIBVIRT_PURGE=false \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
+	molecule $@ -s ${MOLECULE_SCENARIO}
 
 ignore:
-	@poetry run ansible-lint --generate-ignore
+	@ansible-lint --generate-ignore
 
 clean: destroy reset
-	@poetry env remove $$(which python) >/dev/null 2>&1 || exit 0
+	@remove $$(which python) >/dev/null 2>&1 || exit 0
 
 publish: build
-	poetry run ansible-galaxy collection publish --api-key ${GALAXY_API_KEY} \
+	ansible-galaxy collection publish --api-key ${GALAXY_API_KEY} \
 		"${COLLECTION_NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}.tar.gz"
 
 version:
-	@poetry run molecule --version
-
-debug: install version
-	@poetry export --dev --without-hashes || exit 0
+	@molecule --version
