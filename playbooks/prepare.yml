@@ -3,6 +3,11 @@
   hosts: "{{ libvirt_hosts | default('localhost') }}"
   become: true
   tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
     - name: Install deb package requirements
       ansible.builtin.apt:
         name:
