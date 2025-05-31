@@ -460,17 +460,6 @@ files = [
 referencing = ">=0.31.0"
 
 [[package]]
-name = "libvirt-python"
-version = "11.0.0"
-description = "The libvirt virtualization API python binding"
-optional = false
-python-versions = ">=3.6"
-groups = ["dev"]
-files = [
-    {file = "libvirt-python-11.0.0.tar.gz", hash = "sha256:cee825a53c6438c5bc84b4250b35493a8e504d5d8075d3d2069ffaf7090846f8"},
-]
-
-[[package]]
 name = "lxml"
 version = "5.3.0"
 description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
@@ -1298,4 +1287,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "d2372d236bc92b1e14304aafa8b44f111c6bdfed11fb7385b39ef4ef2cb9c70e"
+content-hash = "45932b86a0ee0c13f3b7370ddf73b41fe7e7ca4c2398b3f9f2e317e7156979ac"
