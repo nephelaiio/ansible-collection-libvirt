@@ -1,7 +1,6 @@
 .PHONY: ${MAKECMDGOALS}
 
 HOST_DISTRO = $$(grep ^ID /etc/os-release | cut -d '=' -f 2)
-PKGMAN = $$(if [ "$(HOST_DISTRO)" = "fedora" ]; then echo "dnf" ; else echo "apt-get"; fi)
 MOLECULE_SCENARIO ?= default
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= jammy
@@ -27,7 +26,7 @@ COLLECTION_VERSION = $$(yq '.version' < galaxy.yml -r)
 all: install version lint test
 
 shell:
-	DEVBOX_USE_VERSION=0.13.1 devbox shell
+	devbox shell
 
 ubuntu:
 	make create prepare \
@@ -72,7 +71,17 @@ test: lint
 	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
 
 install:
-	@sudo ${PKGMAN} install -y $$(if [[ "${HOST_DISTRO}" == "fedora" ]]; then echo libvirt-devel; else echo libvirt-dev; fi)
+	@case "${HOST_DISTRO}" in \
+		debian|ubuntu) \
+			sudo apt-get update; \
+			sudo apt-get install -y libvirt-dev; \
+			;; \
+		fedora|centos|rocky|alma) \
+			sudo dnf install -y libvirt-devel; \
+			;; \
+		*) \
+			echo "Unsupported distribution: ${HOST_DISTRO}"; exit 1; \
+	esac
 	@poetry install --no-root
 
 lint: requirements
