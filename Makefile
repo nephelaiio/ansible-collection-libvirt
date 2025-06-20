@@ -71,17 +71,8 @@ test: lint
 	uv run molecule $@ -s ${MOLECULE_SCENARIO}
 
 install:
-	@case "${HOST_DISTRO}" in \
-		debian|ubuntu) \
-			sudo apt-get update; \
-			sudo apt-get install -y libvirt-dev; \
-			;; \
-		fedora|centos|rocky|alma) \
-			sudo dnf install -y libvirt-devel; \
-			;; \
-		*) \
-			echo "Unsupported distribution: ${HOST_DISTRO}"; exit 1; \
-	esac
+	@sudo apt-get update
+	@sudo apt-get install -y libvirt-dev
 	@uv sync
 
 lint: requirements
