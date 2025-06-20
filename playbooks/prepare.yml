@@ -12,7 +12,6 @@
           - libvirt-daemon-system
           - libvirt-daemon-system-systemd
           - xorriso
-          - network-manager
         update_cache: true
       vars:
         _is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
@@ -28,5 +27,4 @@
           - libvirt-client
           - libvirt-daemon
           - xorriso
-          - NetworkManager
       when: ansible_os_family == 'RedHat'
