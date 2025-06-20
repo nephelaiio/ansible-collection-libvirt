@@ -17,19 +17,34 @@
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
     - name: Query active KVM guests
-      ansible.builtin.command: "virsh list --name"
-      register: _libvirt_guest_query
+      ansible.builtin.command: "virsh list --name --state-running"
+      register: _libvirt_guest_query_active
       changed_when: false
 
-    - name: Set KVM guest facts
+    - name: Set KVM guest facts for active guests
       ansible.builtin.set_fact:
-        _libvirt_guest_list: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
+        _libvirt_guest_list_active: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
       vars:
-        _libvirt_guest_names: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
+        _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
 
     - name: Stop KVM guests
       ansible.builtin.command: "virsh destroy {{ item }}"
-      loop: "{{ _libvirt_guest_list }}"
+      loop: "{{ _libvirt_guest_list_active }}"
+
+    - name: Query all KVM guests
+      ansible.builtin.command: "virsh list --all --name"
+      register: _libvirt_guest_query_all
+      changed_when: false
+
+    - name: Set KVM guest facts for all guests
+      ansible.builtin.set_fact:
+        _libvirt_guest_list_all: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names_all) }}"
+      vars:
+        _libvirt_guest_names_all: "{{ _libvirt_guest_query_all.stdout_lines | map('trim') | list }}"
+
+    - name: Undefine KVM guests
+      ansible.builtin.command: "virsh undefine {{ item }}"
+      loop: "{{ _libvirt_guest_list_all }}"
 
     - name: Set disk location facts
       ansible.builtin.set_fact:
