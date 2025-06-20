@@ -75,11 +75,19 @@
             - name: Destroy libvirt network
               ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
 
+        - name: List network interfaces
+          ansible.builtin.command: "nmcli -n --terse --fields DEVICE dev status"
+          register: _libvirt_dev_info
+          changed_when: false
+
         - name: Destroy libvirt network bridge
           community.general.nmcli:
             type: bridge
-            conn_name: "{{ _libvirt_network }}br0"
+            conn_name: "{{ _libvirt_device }}"
             state: absent
+          vars:
+            _libvirt_device: "{{ _libvirt_network }}br0"
+          when: _libvirt_device in _libvirt_dev_info.stdout
 
         - name: Delete host file entries
           ansible.builtin.lineinfile:
@@ -96,7 +104,8 @@
                 dest: "{{ item }}"
                 state: absent
               vars:
-                _platform_image_urls: "{{ _libvirt_platforms | map(attribute='image') | unique }}"
+                _platform_images: "{{ _libvirt_platforms | selectattr('image', 'defined') }}"
+                _platform_image_urls: "{{ _platform_images | map(attribute='image') | ansible.builtin.unique }}"
                 _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
                 _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
               loop: "{{ _platform_image_paths }}"
