@@ -80,12 +80,21 @@
           register: _libvirt_net_query
           changed_when: false
 
-        - name: Set KVM network facts
-          ansible.builtin.set_fact:
-            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
-
-        - name: Destroy libvirt network
+        - name: Destroy libvirt active network
           ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
+          vars:
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
+          when: _libvirt_network in _libvirt_net_list
+
+        - name: Query inactive KVM networks
+          ansible.builtin.command: "virsh net-list --name --all"
+          register: _libvirt_net_query
+          changed_when: false
+
+        - name: Destroy libvirt active network
+          ansible.builtin.command: "virsh net-undefine {{ _libvirt_network }}"
+          vars:
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
           when: _libvirt_network in _libvirt_net_list
 
         - name: List network interfaces
