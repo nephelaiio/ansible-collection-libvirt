@@ -6,8 +6,10 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
 - name: Configure guests
-  hosts: "{{ libvirt_hosts | default('localhost') }}"
+  hosts: localhost
   become: true
+  vars:
+    ansible_connection: local
   tasks:
     - name: Debug vardefs
       ansible.builtin.debug:
@@ -327,6 +329,8 @@
 
 - name: Build Molecule instance config file
   hosts: localhost
+  vars:
+    ansible_connection: local
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
