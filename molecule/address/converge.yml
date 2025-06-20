@@ -1,0 +1,4 @@
+---
+- name: Connect to KVM guest
+  hosts: all:!molecule_pxe
+  tasks: []

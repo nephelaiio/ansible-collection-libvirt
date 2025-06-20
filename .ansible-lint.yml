@@ -1,5 +1,0 @@
----
-warn_list:
-  - jinja
-  - run-once
-  - no-changed-when
