@@ -9,7 +9,6 @@ requires-python = ">=3.11"
 dev = [
   "ansible>=11.5.0",
   "ansible-lint>=25.4.0",
-  "libvirt-python>=11.3.0",
   "lxml>=5.4.0",
   "molecule>=25.4.0",
   "molecule-plugins>=23.7.0",

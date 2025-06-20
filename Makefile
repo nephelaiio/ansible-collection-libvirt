@@ -71,8 +71,6 @@ test: lint
 	uv run molecule $@ -s ${MOLECULE_SCENARIO}
 
 install:
-	@sudo apt-get update
-	@sudo apt-get install -y libvirt-dev
 	@uv sync
 
 lint: requirements

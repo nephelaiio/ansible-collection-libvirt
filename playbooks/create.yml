@@ -106,6 +106,10 @@
               ignore_errors: true
               changed_when: _libvirt_network_create | bool
 
+            - name: Set libvirt network autostart
+              ansible.builtin.command: "virsh net-autostart {{ _libvirt_network }}"
+              changed_when: _libvirt_network_create | bool
+
       always:
         - name: Destroy libvirt tempdir
           ansible.builtin.file:

@@ -80,29 +80,22 @@
           register: _libvirt_net_query
           changed_when: false
 
-        - name: Set KVM network facts
-          ansible.builtin.set_fact:
-            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | intersect(['default']) }}"
-
-        - name: Destroy libvirt network
+        - name: Destroy active libvirt network
+          ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
+          vars:
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
           when: _libvirt_network in _libvirt_net_list
-          block:
-            - name: Destroy libvirt network
-              ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
 
-        - name: List network interfaces
-          ansible.builtin.command: "nmcli -n --terse --fields DEVICE dev status"
-          register: _libvirt_dev_info
+        - name: Query inactive KVM networks
+          ansible.builtin.command: "virsh net-list --name --all"
+          register: _libvirt_net_query
           changed_when: false
 
-        - name: Destroy libvirt network bridge
-          community.general.nmcli:
-            type: bridge
-            conn_name: "{{ _libvirt_device }}"
-            state: absent
+        - name: Undefine inactive libvirt network
+          ansible.builtin.command: "virsh net-undefine {{ _libvirt_network }}"
           vars:
-            _libvirt_device: "{{ _libvirt_network }}br0"
-          when: _libvirt_device in _libvirt_dev_info.stdout
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
+          when: _libvirt_network in _libvirt_net_list
 
         - name: Delete host file entries
           ansible.builtin.lineinfile:
