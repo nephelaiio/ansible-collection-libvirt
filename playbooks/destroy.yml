@@ -18,28 +18,34 @@
 
     - name: Query active KVM guests
       ansible.builtin.command: "virsh list --name"
-      register: guest_query
+      register: _libvirt_guest_query
       changed_when: false
 
     - name: Set KVM guest facts
       ansible.builtin.set_fact:
-        _guests: "{{ _libvirt_platforms | map(attribute='name') | intersect(guest_query.stdout_lines) }}"
+        _libvirt_guest_list: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
+      vars:
+        _libvirt_guest_names: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
 
     - name: Stop KVM guests
       ansible.builtin.command: "virsh destroy {{ item }}"
-      loop: "{{ _guests }}"
+      loop: "{{ _libvirt_guest_list }}"
 
-    - name: Undefine KVM guests
-      ansible.builtin.command: "virsh undefine {{ item }}"
-      loop: "{{ _guests }}"
+    - name: Set disk location facts
+      ansible.builtin.set_fact:
+        _libvirt_image_paths: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
+      vars:
+        _basenames: "{{ _libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
+
+    - name: Debug disk location facts
+      ansible.builtin.debug:
+        var: _libvirt_image_paths
 
     - name: Delete guest disks
       ansible.builtin.file:
         dest: "{{ item }}"
         state: absent
-      vars:
-        _basenames: "{{ _libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
-      loop: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
+      loop: "{{ _libvirt_image_paths }}"
 
 - name: Destroy KVM resources
   hosts: "{{ libvirt_hosts | default('localhost') }}"
@@ -56,19 +62,18 @@
 
         - name: Query active KVM networks
           ansible.builtin.command: "virsh net-list --name"
-          register: net_query
+          register: _libvirt_net_query
           changed_when: false
 
+        - name: Set KVM network facts
+          ansible.builtin.set_fact:
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | intersect(['default']) }}"
+
         - name: Destroy libvirt network
-          when:
-            - _libvirt_network != "default"
-            - _libvirt_network in net_query.stdout_lines
+          when: _libvirt_network in _libvirt_net_list
           block:
             - name: Destroy libvirt network
               ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
-
-            - name: Undefine libvirt network
-              ansible.builtin.command: "virsh net-undefine {{ _libvirt_network }}"
 
         - name: Destroy libvirt network bridge
           community.general.nmcli:
@@ -84,7 +89,7 @@
           loop: "{{ _libvirt_platforms | map(attribute='name') }}"
 
         - name: Delete libvirt pool
-          when: _libvirt_purge
+          when: _libvirt_purge | bool
           block:
             - name: Delete cached images
               ansible.builtin.file:
@@ -96,7 +101,18 @@
                 _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
               loop: "{{ _platform_image_paths }}"
 
+            - name: Query libvirt pools
+              ansible.builtin.command: "virsh pool-list --name"
+              register: pool_query
+
+            - name: Set pool facts
+              ansible.builtin.set_fact:
+                _libvirt_pool_list: "{{ _pools.stdout_lines | map('trim') | list }}"
+
             - name: Destroy libvirt pool
-              community.libvirt.virt_pool:
-                state: deleted
-                name: "{{ _libvirt_pool }}"
+              ansible.builtin.command: "virsh pool-destroy {{ _libvirt_pool }}"
+              when: _libvirt_pool in _libvirt_pool_list
+
+            - name: Undefine libvirt pool
+              ansible.builtin.command: "virsh pool-undefine {{ _libvirt_pool }}"
+              when: _libvirt_pool in _libvirt_pool_list

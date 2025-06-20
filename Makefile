@@ -68,7 +68,7 @@ rocky9:
 
 test: lint
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
+	uv run molecule $@ -s ${MOLECULE_SCENARIO}
 
 install:
 	@case "${HOST_DISTRO}" in \
@@ -82,31 +82,31 @@ install:
 		*) \
 			echo "Unsupported distribution: ${HOST_DISTRO}"; exit 1; \
 	esac
-	@poetry install --no-root
+	@uv sync
 
 lint: requirements
-	poetry run yamllint .
-	poetry run ansible-lint playbooks/
+	uv run yamllint .
+	uv run ansible-lint -p playbooks/
 
 requirements: install
 	@rm -rf ${ROLE_DIR}/*
 	@python --version
 	@if [ -f ${ROLE_FILE} ]; then \
-		poetry run ansible-galaxy role install \
+		uv run ansible-galaxy role install \
 			--force --no-deps \
 			--roles-path ${ROLE_DIR} \
 			--role-file ${ROLE_FILE}; \
 	fi
-	@poetry run ansible-galaxy collection install \
+	@uv run ansible-galaxy collection install \
 		--force-with-deps .
 	@\find ./ -name "*.ymle*" -delete
 
 build: requirements
-	@poetry run ansible-galaxy collection build --force
+	@uv run ansible-galaxy collection build --force
 
 dependency create prepare converge idempotence side-effect verify destroy reset list:
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
+	uv run molecule $@ -s ${MOLECULE_SCENARIO}
 
 ifeq (login,$(firstword $(MAKECMDGOALS)))
     LOGIN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -115,25 +115,25 @@ endif
 
 login:
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}
+	uv run molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}
 
 purge:
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
 	LIBVIRT_PURGE=false \
-	poetry run molecule $@ -s ${MOLECULE_SCENARIO}
+	uv run molecule $@ -s ${MOLECULE_SCENARIO}
 
 ignore:
-	@poetry run ansible-lint --generate-ignore
+	@uv run ansible-lint --generate-ignore
 
 clean: destroy reset
-	@poetry env remove $$(which python) >/dev/null 2>&1 || exit 0
+	@uv env remove $$(which python) >/dev/null 2>&1 || exit 0
 
 publish: build
-	poetry run ansible-galaxy collection publish --api-key ${GALAXY_API_KEY} \
+	uv run ansible-galaxy collection publish --api-key ${GALAXY_API_KEY} \
 		"${COLLECTION_NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}.tar.gz"
 
 version:
-	@poetry run molecule --version
+	@uv run molecule --version
 
 debug: install version
-	@poetry export --dev --without-hashes || exit 0
+	@uv export --dev --without-hashes || exit 0

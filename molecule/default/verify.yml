@@ -3,7 +3,7 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
 - name: Verify KVM guests
-  hosts: "all:!molecule_pxe"
+  hosts: all:!molecule_pxe
   gather_facts: false
   tasks:
     - name: Verify KVM guest attributes
@@ -81,20 +81,40 @@
             - name: Disconnect disk image from NBD device
               ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
 
-            - name: Stop KVM guest
-              ansible.builtin.shell: "virsh shutdown {{ _guest_name }} > /dev/null"
+            - name: Create libvirt tempdir
+              ansible.builtin.tempfile:
+                state: directory
+                prefix: libvirt
+              register: _libvirt_tmpdir
+              changed_when: false
 
-            - name: Wait for guest shutdown
-              ansible.builtin.command: "virsh list --name"
-              register: _libvirt_query
-              until: _guest_name not in _libvirt_query.stdout_lines
+            - name: Copy disk image to temporary file
+              vars:
+                _temp_disk: "{{ _libvirt_tmpdir.path }}/{{ _guest_disk | basename }}"
+              block:
+                - name: Stop KVM guest
+                  ansible.builtin.shell: "virsh suspend {{ _guest_name }} > /dev/null"
 
-            - name: Convert NBD disk image to raw format
-              ansible.builtin.command: "qemu-img convert -O raw {{ _guest_disk }} {{ _guest_nbddisk }}"
-              become: false
+                - name: Copy NBD disk to temp image
+                  ansible.builtin.copy:
+                    src: "{{ _guest_disk }}"
+                    dest: "{{ _temp_disk }}"
+                    mode: "o=rw,g=,o="
+                    remote_src: true
 
-            - name: Start KVM guest
-              ansible.builtin.command: "virsh start {{ _guest_name }}"
+                - name: Convert NBD disk image to raw format
+                  ansible.builtin.command: "qemu-img convert -O raw {{ _temp_disk }} {{ _guest_nbddisk }}"
+
+              always:
+                - name: Destroy libvirt tempdir
+                  ansible.builtin.file:
+                    dest: "{{ _libvirt_tmpdir.path }}"
+                    state: absent
+                  changed_when: false
+
+                - name: Resume KVM guest
+                  ansible.builtin.command: "virsh resume {{ _guest_name }}"
+                  ignore_errors: true
 
             - name: Connect disk image to NBD device
               ansible.builtin.command: "qemu-nbd --format raw --connect {{ _guest_nbddev }} {{ _guest_nbddisk }}"

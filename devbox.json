@@ -2,8 +2,6 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
   "packages": [
     "python@3.11.11",
-    "poetry@latest",
-    "poetryPlugins.poetry-plugin-export@latest",
     "libvirt@latest",
     "networkmanager@latest",
     "expect@latest",
@@ -12,9 +10,7 @@
     "gnumake@latest",
     "yq@latest"
   ],
-  "env": {
-    "LANG": "en_US.UTF-8"
-  },
+  "env": {},
   "shell": {
     "init_hook": [],
     "scripts": {}

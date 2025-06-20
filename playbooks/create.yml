@@ -16,11 +16,6 @@
         _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
-    - name: Query libvirt pools
-      community.libvirt.virt_pool:
-        command: list_pools
-      register: _pools
-
     - name: Create libvirt path
       ansible.builtin.file:
         path: "{{ _libvirt_path }}"
@@ -28,38 +23,95 @@
         owner: root
         group: root
         mode: 0755
-      become: true
 
-    - name: Define libvirt pool
-      community.libvirt.virt_pool:
-        command: define
-        name: "{{ _libvirt_pool }}"
-        xml: "{{ lookup('ansible.builtin.template', 'pool.j2.xml') }}"
-      vars:
-        _pool: "{{ _libvirt_pool }}"
-        _path: "{{ _libvirt_path }}"
+    - name: Create libvirt tempdir
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: libvirt
+      register: _libvirt_tmpdir
+      changed_when: false
 
-    - name: Activate libvirt pool
-      community.libvirt.virt_pool:
-        state: active
-        name: "{{ _libvirt_pool }}"
+    - name: Manage libvirt network
+      block:
+        - name: Query libvirt pools
+          ansible.builtin.command: "virsh pool-list --name"
+          register: _pools
+          changed_when: false
 
-    - name: Add libvirt network
-      community.libvirt.virt_net:
-        command: define
-        name: "{{ _net_name }}"
-        xml: "{{ lookup('ansible.builtin.template', 'network.j2.xml') }}"
-      vars:
-        _net_name: "{{ _libvirt_network }}"
-        _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
-        _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
-      when: _libvirt_network != "default"
+        - name: Debug libvirt pools
+          ansible.builtin.debug:
+            var: _pools.stdout_lines
 
-    - name: Start libvirt network
-      community.libvirt.virt_net:
-        command: create
-        name: "{{ _libvirt_network }}"
-      when: _libvirt_network != "default"
+        - name: Debug target pool
+          ansible.builtin.debug:
+            var: _libvirt_pool
+
+        - name: Set pool facts
+          ansible.builtin.set_fact:
+            _libvirt_pool_list: "{{ _pools.stdout_lines | map('trim') | list }}"
+
+        - name: Create libvirt pool
+          when: _libvirt_pool not in _libvirt_pool_list
+          block:
+            - name: Create libvirt pool template
+              ansible.builtin.template:
+                src: "pool.j2.xml"
+                dest: "{{ _libvirt_tmpdir.path }}/pool.j2.xml"
+                mode: "u=rw,g=r,o="
+              vars:
+                _pool_name: "{{ _libvirt_pool }}"
+                _pool_path: "{{ _libvirt_path }}"
+
+            - name: Define libvirt pool
+              ansible.builtin.command: "virsh pool-define {{ _libvirt_tmpdir.path }}/pool.j2.xml --validate"
+              changed_when: _libvirt_pool not in _pools.stdout_lines
+
+            - name: Start libvirt pool
+              ansible.builtin.command: "virsh pool-start {{ _libvirt_pool }}"
+              ignore_errors: true
+              changed_when: _libvirt_pool not in _pools.stdout_lines
+
+        - name: Query libvirt networks
+          ansible.builtin.command: "virsh net-list --name"
+          register: _net_query
+          changed_when: false
+
+        - name: Set libvirt network facts
+          ansible.builtin.set_fact:
+            _libvirt_network_create: "{{ not _libvirt_network_default and not _libvirt_network_exists }}"
+          vars:
+            _libvirt_network_list: "{{ _net_query.stdout_lines | map('trim') | list }}"
+            _libvirt_network_exists: "{{ _libvirt_network in _libvirt_network_list }}"
+            _libvirt_network_default: "{{ _libvirt_network == 'default' }}"
+
+        - name: Create libvirt network
+          when: _libvirt_network_create | bool
+          block:
+            - name: Create libvirt network template
+              ansible.builtin.template:
+                src: "network.j2.xml"
+                dest: "{{ _libvirt_tmpdir.path }}/network.j2.xml"
+                mode: "u=rw,g=r,o="
+              vars:
+                _net_name: "{{ _libvirt_network }}"
+                _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
+                _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
+
+            - name: Add libvirt network
+              ansible.builtin.command: "virsh net-define {{ _libvirt_tmpdir.path }}/network.j2.xml --validate"
+              changed_when: _libvirt_network_create | bool
+
+            - name: Start libvirt network
+              ansible.builtin.command: "virsh net-start {{ _libvirt_network }}"
+              ignore_errors: true
+              changed_when: _libvirt_network_create | bool
+
+      always:
+        - name: Destroy libvirt tempdir
+          ansible.builtin.file:
+            dest: "{{ _libvirt_tmpdir.path }}"
+            state: absent
+          changed_when: false
 
     - name: List cached images
       ansible.builtin.find:
@@ -164,11 +216,15 @@
         - name: Query active KVM guests
           ansible.builtin.command: virsh list --name
           run_once: true
-          register: guest_query
+          register: _libvirt_guest_query
           changed_when: false
 
+        - name: Set guest facts
+          ansible.builtin.set_fact:
+            _libvirt_guest_list: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
+
         - name: Manage KVM guests
-          when: inventory_hostname not in guest_query.stdout_lines
+          when: inventory_hostname not in _libvirt_guest_list
           block:
             - name: Create KVM guest disks
               when: guest_image != ''
@@ -234,10 +290,14 @@
                       -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
                     chdir: "{{ libvirt_tmpdir.path }}"
 
+                - name: Template KVM guest XML
+                  ansible.builtin.template:
+                    src: "vm.j2.xml"
+                    dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
+                    mode: "u=rw,g=r,o="
+
                 - name: Create KVM guest
-                  community.libvirt.virt:
-                    xml: "{{ lookup('ansible.builtin.template', 'vm.j2.xml') }}"
-                    command: define
+                  ansible.builtin.command: "virsh create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
 
               always:
                 - name: Destroy cloud-init tempdir
@@ -246,9 +306,8 @@
                     state: absent
 
         - name: Start KVM guest
-          community.libvirt.virt:
-            name: "{{ inventory_hostname }}"
-            state: running
+          ansible.builtin.command: "virsh start {{ inventory_hostname }}"
+          ignore_errors: true
 
     - name: Override KVM guest configuration settings
       ansible.builtin.add_host:
