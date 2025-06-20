@@ -82,13 +82,11 @@
 
         - name: Set KVM network facts
           ansible.builtin.set_fact:
-            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | intersect(['default']) }}"
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
 
         - name: Destroy libvirt network
+          ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
           when: _libvirt_network in _libvirt_net_list
-          block:
-            - name: Destroy libvirt network
-              ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
 
         - name: List network interfaces
           ansible.builtin.command: "nmcli -n --terse --fields DEVICE dev status"
