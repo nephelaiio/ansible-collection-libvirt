@@ -7,10 +7,9 @@ An [ansible collection](https://galaxy.ansible.com/ui/repo/published/nephelaiio/
 
 ## Collection hostgroups
 
-| Hostgroup      |     Default | Description                  |
-| :------------- | ----------: | :--------------------------- |
-| libvirt_hosts  | 'localhost' | Libvirt virtualization hosts |
-| libvirt_guests |       'all' | Libvirt guests               |
+| Hostgroup      | Default | Description    |
+| :------------- | ------: | :------------- |
+| libvirt_guests |   'all' | Libvirt guests |
 
 ## Collection variables
 
@@ -26,7 +25,7 @@ The following is the list of parameters intended for end-user manipulation:
 | libvirt_pass         |                               'molecule' | OS password for guest access   | false    |
 | libvirt_pool         |                  '{{ libvirt_network }}' | Libvirt storage pool name      | false    |
 | libvirt_path         | '/var/lib/libvirt/{{ libvirt_network }}' | Libvirt storage pool directory | false    |
-| libvirt_conn_timeout |                                     '30' | Libvirt guest conn tiemout     | false    |
+| libvirt_conn_timeout |                                     '30' | Libvirt guest conn timeout     | false    |
 
 The following environment variables are also supported
 

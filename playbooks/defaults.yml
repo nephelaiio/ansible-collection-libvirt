@@ -1,6 +1,6 @@
 ---
 - name: Set collection defaults
-  hosts: "{{ libvirt_guests | default('all') }}:{{ libvirt_hosts | default('localhost') }}"
+  hosts: "{{ libvirt_guests | default('all') }}:localhost"
   gather_facts: false
   tasks:
     - name: Verify platform vardef
