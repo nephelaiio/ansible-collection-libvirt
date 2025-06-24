@@ -78,9 +78,10 @@ test: lint
 install:
 	@uv sync
 
-lint: requirements
-	uv run yamllint .
-	uv run ansible-lint -p playbooks/
+lint: install
+	uv run yamllint . -c .yamllint
+	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
+	uv run ansible-lint -p playbooks/ --exclude "ansible_collections/*"
 
 requirements: install
 	@rm -rf ${ROLE_DIR}/*
