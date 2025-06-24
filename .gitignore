@@ -1,2 +1,3 @@
 .ansible/
+ansible_collections/
 nephelaiio-libvirt*.tar.gz

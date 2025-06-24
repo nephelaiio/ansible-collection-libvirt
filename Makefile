@@ -1,6 +1,8 @@
 .PHONY: ${MAKECMDGOALS}
 
-HOST_DISTRO = $$(grep ^ID /etc/os-release | cut -d '=' -f 2)
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_DIR := $(dir $(MAKEFILE_PATH))
+
 MOLECULE_SCENARIO ?= default
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= jammy
@@ -16,12 +18,14 @@ GALAXY_API_KEY ?=
 GITHUB_REPOSITORY ?= $$(git config --get remote.origin.url | cut -d':' -f 2 | cut -d. -f 1)
 GITHUB_ORG = $$(echo ${GITHUB_REPOSITORY} | cut -d/ -f 1)
 GITHUB_REPO = $$(echo ${GITHUB_REPOSITORY} | cut -d/ -f 2)
-REQUIREMENTS = requirements.yml
 ROLE_DIR = roles
 ROLE_FILE = roles.yml
 COLLECTION_NAMESPACE = $$(yq '.namespace' < galaxy.yml -r)
 COLLECTION_NAME = $$(yq '.name' < galaxy.yml -r)
 COLLECTION_VERSION = $$(yq '.version' < galaxy.yml -r)
+
+PURGE_ARGS ?= false
+LOGIN_ARGS ?=
 
 all: install version lint test
 
@@ -67,6 +71,7 @@ rocky9:
 	make rocky EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 test: lint
+	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
 	uv run molecule $@ -s ${MOLECULE_SCENARIO}
 
@@ -86,30 +91,28 @@ requirements: install
 			--roles-path ${ROLE_DIR} \
 			--role-file ${ROLE_FILE}; \
 	fi
-	@uv run ansible-galaxy collection install \
+	@ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
+	uv run ansible-galaxy collection install \
 		--force-with-deps .
 	@\find ./ -name "*.ymle*" -delete
 
 build: requirements
 	@uv run ansible-galaxy collection build --force
 
-dependency create prepare converge idempotence side-effect verify destroy reset list:
-	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	uv run molecule $@ -s ${MOLECULE_SCENARIO}
+ifeq (purge,$(firstword $(MAKECMDGOALS)))
+	PURGE_ARGS := "true"
+endif
 
 ifeq (login,$(firstword $(MAKECMDGOALS)))
     LOGIN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
     $(eval $(subst $(space),,$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))):;@:)
 endif
 
-login:
+dependency create prepare converge idempotence side-effect verify destroy reset list purge login:
+	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	uv run molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}
-
-purge:
-	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	LIBVIRT_PURGE=false \
-	uv run molecule $@ -s ${MOLECULE_SCENARIO}
+	LIBVIRT_PURGE=$(PURGE_ARGS) \
+	uv run molecule $@ -s ${MOLECULE_SCENARIO} $(LOGIN_ARGS)
 
 ignore:
 	@uv run ansible-lint --generate-ignore
