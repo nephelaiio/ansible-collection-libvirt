@@ -373,60 +373,60 @@
         }
       }
     },
-    "python@3.11.11": {
-      "last_modified": "2025-02-07T11:26:36Z",
+    "python@3.12": {
+      "last_modified": "2025-06-20T02:24:11Z",
       "plugin_version": "0.0.4",
-      "resolved": "github:NixOS/nixpkgs/d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d#python311",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#python312",
       "source": "devbox-search",
-      "version": "3.11.11",
+      "version": "3.12.11",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/p8cd5z09ranvxg3s5yapraag6m4ka4qb-python3-3.11.11",
+              "path": "/nix/store/q54d9qqlb27g2nf9ja4zsa89gl7b3yvm-python3-3.12.11",
               "default": true
             }
           ],
-          "store_path": "/nix/store/p8cd5z09ranvxg3s5yapraag6m4ka4qb-python3-3.11.11"
+          "store_path": "/nix/store/q54d9qqlb27g2nf9ja4zsa89gl7b3yvm-python3-3.12.11"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/i7svvkm9ndrh1kwr4xhkh0df1d78fcjs-python3-3.11.11",
+              "path": "/nix/store/3ib0x9qs9bwg4nfkrk18rk1dx6yng0ga-python3-3.12.11",
               "default": true
             },
             {
               "name": "debug",
-              "path": "/nix/store/gwicdi09hhln3vg650zkgm9c0maci7l1-python3-3.11.11-debug"
+              "path": "/nix/store/ayv6k8h3mhdxkr61nv5c0ib2lpgs59md-python3-3.12.11-debug"
             }
           ],
-          "store_path": "/nix/store/i7svvkm9ndrh1kwr4xhkh0df1d78fcjs-python3-3.11.11"
+          "store_path": "/nix/store/3ib0x9qs9bwg4nfkrk18rk1dx6yng0ga-python3-3.12.11"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/sr93yld4gx5mj6zx9217q11g2hd1nzjl-python3-3.11.11",
+              "path": "/nix/store/q2y1zwszjmsap7r6nbk4dxbcsm47abfx-python3-3.12.11",
               "default": true
             }
           ],
-          "store_path": "/nix/store/sr93yld4gx5mj6zx9217q11g2hd1nzjl-python3-3.11.11"
+          "store_path": "/nix/store/q2y1zwszjmsap7r6nbk4dxbcsm47abfx-python3-3.12.11"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/gzl581vkwymk2iys5zz6k1k1zdf03ba1-python3-3.11.11",
+              "path": "/nix/store/89laaz8x9pdydxzz74p0vd8vdj0szqbq-python3-3.12.11",
               "default": true
             },
             {
               "name": "debug",
-              "path": "/nix/store/1jhiyg13j8w45ix39c687csv22shqdss-python3-3.11.11-debug"
+              "path": "/nix/store/prihzlrq8b5km32h61056adn8vpmnlgj-python3-3.12.11-debug"
             }
           ],
-          "store_path": "/nix/store/gzl581vkwymk2iys5zz6k1k1zdf03ba1-python3-3.11.11"
+          "store_path": "/nix/store/89laaz8x9pdydxzz74p0vd8vdj0szqbq-python3-3.12.11"
         }
       }
     },
