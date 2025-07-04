@@ -3,7 +3,7 @@
   "packages": [
     "python@3.11.11",
     "libvirt@latest",
-    "xorriso@latest",
+    "libisoburn@latest",
     "expect@latest",
     "gnupg@latest",
     "xfsprogs@latest",
