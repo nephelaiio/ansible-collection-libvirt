@@ -170,11 +170,12 @@
   hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
   become: true
+  vars:
+    ansible_connection: local
   tasks:
     - name: Create guest SSH key
       become: false
       run_once: true
-      delegate_to: localhost
       block:
         - name: Create guest dir
           ansible.builtin.file:
@@ -216,104 +217,101 @@
       vars:
         _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
 
-    - name: Create KVM guest
-      delegate_to: localhost
+    - name: Query active KVM guests
+      ansible.builtin.command: virsh list --name
+      run_once: true
+      register: _libvirt_guest_query
+      changed_when: false
+
+    - name: Set guest facts
+      ansible.builtin.set_fact:
+        _libvirt_guest_list: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
+
+    - name: Manage KVM guests
+      when: inventory_hostname not in _libvirt_guest_list
       block:
-        - name: Query active KVM guests
-          ansible.builtin.command: virsh list --name
-          run_once: true
-          register: _libvirt_guest_query
-          changed_when: false
-
-        - name: Set guest facts
-          ansible.builtin.set_fact:
-            _libvirt_guest_list: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
-
-        - name: Manage KVM guests
-          when: inventory_hostname not in _libvirt_guest_list
+        - name: Create KVM guest disks
+          when: guest_image != ''
           block:
             - name: Create KVM guest disks
-              when: guest_image != ''
-              block:
-                - name: Create KVM guest disks
-                  ansible.builtin.copy:
-                    src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
-                    dest: "{{ guest_disk_path }}"
-                    remote_src: true
-                    mode: "u=rw,g=r,o="
-
-                - name: Resize KVM guest disks
-                  ansible.builtin.command:
-                    cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
-
-            - name: Create KVM pxe disks
-              ansible.builtin.command:
-                cmd: "qemu-img create -f qcow2 {{ guest_disk_path }} {{ guest_disk_size }}"
-              when: guest_image == ''
-
-            - name: Manage KVM disk permissions
-              ansible.builtin.file:
+              ansible.builtin.copy:
+                src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
                 dest: "{{ guest_disk_path }}"
-                state: file
-                owner: "{{ (_host_os_family == 'Debian') | ternary('libvirt-qemu', 'qemu') }}"
-                group: kvm
-                mode: 0666
-              vars:
-                _host_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
+                remote_src: true
+                mode: "u=rw,g=r,o="
 
-            - name: Create cloud-init tempdir
-              ansible.builtin.tempfile:
-                state: directory
-                prefix: libvirt
-              register: libvirt_tmpdir
+            - name: Resize KVM guest disks
+              ansible.builtin.command:
+                cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
+
+        - name: Create KVM pxe disks
+          ansible.builtin.command:
+            cmd: "qemu-img create -f qcow2 {{ guest_disk_path }} {{ guest_disk_size }}"
+          when: guest_image == ''
+
+        - name: Manage KVM disk permissions
+          ansible.builtin.file:
+            dest: "{{ guest_disk_path }}"
+            state: file
+            owner: "{{ (_host_os_family == 'Debian') | ternary('libvirt-qemu', 'qemu') }}"
+            group: kvm
+            mode: 0666
+          vars:
+            _host_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
+
+        - name: Create cloud-init tempdir
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: libvirt
+          register: libvirt_tmpdir
+
+        - name: Create KVM guest
+          block:
+            - name: Create cloud-init meta data
+              ansible.builtin.template:
+                src: "meta-data.yml.j2"
+                dest: "{{ libvirt_tmpdir.path }}/meta-data"
+                mode: "u=rw,g=r,o="
+
+            - name: Create cloud-init user data
+              ansible.builtin.template:
+                src: "user-data.yml.j2"
+                dest: "{{ libvirt_tmpdir.path }}/user-data"
+                mode: "u=rw,g=r,o="
+
+            - name: Create cloud-init network data
+              ansible.builtin.template:
+                src: "network-config.yml.j2"
+                dest: "{{ libvirt_tmpdir.path }}/network-config"
+                mode: "u=rw,g=r,o="
+              when: not guest_dhcp
+
+            - name: Create cloud-init iso
+              ansible.builtin.command:
+                cmd: |
+                  xorriso -as mkisofs
+                  -volid cidata -joliet -rock
+                  -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
+                chdir: "{{ libvirt_tmpdir.path }}"
+
+            - name: Template KVM guest XML
+              ansible.builtin.template:
+                src: "vm.j2.xml"
+                dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
+                mode: "u=rw,g=r,o="
 
             - name: Create KVM guest
-              block:
-                - name: Create cloud-init meta data
-                  ansible.builtin.template:
-                    src: "meta-data.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/meta-data"
-                    mode: "u=rw,g=r,o="
+              ansible.builtin.command: "virsh create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
 
-                - name: Create cloud-init user data
-                  ansible.builtin.template:
-                    src: "user-data.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/user-data"
-                    mode: "u=rw,g=r,o="
+          always:
+            - name: Destroy cloud-init tempdir
+              ansible.builtin.file:
+                dest: "{{ libvirt_tmpdir.path }}"
+                state: absent
 
-                - name: Create cloud-init network data
-                  ansible.builtin.template:
-                    src: "network-config.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/network-config"
-                    mode: "u=rw,g=r,o="
-                  when: not guest_dhcp
-
-                - name: Create cloud-init iso
-                  ansible.builtin.command:
-                    cmd: |
-                      xorriso -as mkisofs
-                      -volid cidata -joliet -rock
-                      -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
-                    chdir: "{{ libvirt_tmpdir.path }}"
-
-                - name: Template KVM guest XML
-                  ansible.builtin.template:
-                    src: "vm.j2.xml"
-                    dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
-                    mode: "u=rw,g=r,o="
-
-                - name: Create KVM guest
-                  ansible.builtin.command: "virsh create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
-
-              always:
-                - name: Destroy cloud-init tempdir
-                  ansible.builtin.file:
-                    dest: "{{ libvirt_tmpdir.path }}"
-                    state: absent
-
-        - name: Start KVM guest
-          ansible.builtin.command: "virsh start {{ inventory_hostname }}"
-          ignore_errors: true
+    - name: Start KVM guest
+      ansible.builtin.command: "virsh start {{ inventory_hostname }}"
+      ignore_errors: true
 
     - name: Override KVM guest configuration settings
       ansible.builtin.add_host:
