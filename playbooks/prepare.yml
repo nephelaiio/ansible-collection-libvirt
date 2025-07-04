@@ -13,7 +13,6 @@
           - libvirt-clients
           - libvirt-daemon-system
           - libvirt-daemon-system-systemd
-          - xorriso
         update_cache: true
       vars:
         _is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
@@ -25,8 +24,6 @@
       ansible.builtin.package:
         name:
           - qemu-kvm
-          - xfsprogs
           - libvirt-client
           - libvirt-daemon
-          - xorriso
       when: ansible_os_family == 'RedHat'

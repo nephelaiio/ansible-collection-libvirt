@@ -3,7 +3,7 @@
   "packages": [
     "python@3.11.11",
     "libvirt@latest",
-    "networkmanager@latest",
+    "xorriso@latest",
     "expect@latest",
     "gnupg@latest",
     "xfsprogs@latest",
@@ -14,6 +14,6 @@
   "env": {},
   "shell": {
     "init_hook": [],
-    "scripts":   {}
+    "scripts": {}
   }
 }

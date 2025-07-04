@@ -257,68 +257,6 @@
         }
       }
     },
-    "networkmanager@latest": {
-      "last_modified": "2025-02-13T13:03:05Z",
-      "resolved": "github:NixOS/nixpkgs/1128e89fd5e11bb25aedbfc287733c6502202ea9#networkmanager",
-      "source": "devbox-search",
-      "version": "1.48.10",
-      "systems": {
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/17xzq57wwwrch58zfrw9ixdqyw0apx6r-networkmanager-1.48.10",
-              "default": true
-            },
-            {
-              "name": "man",
-              "path": "/nix/store/63qk06crwqaw7wlwy6jifw5d9swz0qga-networkmanager-1.48.10-man",
-              "default": true
-            },
-            {
-              "name": "dev",
-              "path": "/nix/store/74hx4ky43gx1576mfdfd6b269hy2kf4v-networkmanager-1.48.10-dev"
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/zq1f34nsg3kg4k2pxja3924p1ckd0q0j-networkmanager-1.48.10-devdoc"
-            },
-            {
-              "name": "doc",
-              "path": "/nix/store/makvl6xy4nrk46d8v6v1cx57fb34pwcx-networkmanager-1.48.10-doc"
-            }
-          ],
-          "store_path": "/nix/store/17xzq57wwwrch58zfrw9ixdqyw0apx6r-networkmanager-1.48.10"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/pwwrmcxacbf047ms820v475cz0kkyrmp-networkmanager-1.48.10",
-              "default": true
-            },
-            {
-              "name": "man",
-              "path": "/nix/store/ysc36hcprk0x7h29a7j36qd6p89h5kmh-networkmanager-1.48.10-man",
-              "default": true
-            },
-            {
-              "name": "dev",
-              "path": "/nix/store/kvdss0qr7ppfzwdr804dy85h345hgwxh-networkmanager-1.48.10-dev"
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/wnmq2879nn14lq0fcy3x9cc488l1n62j-networkmanager-1.48.10-devdoc"
-            },
-            {
-              "name": "doc",
-              "path": "/nix/store/4ia697zdxnp45458ywqn87gcr1irwqni-networkmanager-1.48.10-doc"
-            }
-          ],
-          "store_path": "/nix/store/pwwrmcxacbf047ms820v475cz0kkyrmp-networkmanager-1.48.10"
-        }
-      }
-    },
     "python@3.11.11": {
       "last_modified": "2025-02-07T11:26:36Z",
       "plugin_version": "0.0.4",
@@ -473,6 +411,74 @@
             }
           ],
           "store_path": "/nix/store/q80hcbamr2blysjxibw3ygf6y0vq5yr6-xfsprogs-6.12.0-bin"
+        }
+      }
+    },
+    "xorriso@latest": {
+      "last_modified": "2024-03-22T11:26:23Z",
+      "resolved": "github:NixOS/nixpkgs/a3ed7406349a9335cb4c2a71369b697cecd9d351#xorriso",
+      "source": "devbox-search",
+      "version": "1.5.7-unstable-2023-12-06",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qi75i4b5k8j3qdw9ipqkcmvggxvkbx1l-xorriso-1.5.7-unstable-2023-12-06",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/vbxf38d6x0zykvf20c2g7jfmn89m65ip-xorriso-1.5.7-unstable-2023-12-06-man",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/qi75i4b5k8j3qdw9ipqkcmvggxvkbx1l-xorriso-1.5.7-unstable-2023-12-06"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/dwxnypdmb5n5mgspm8xy96gkgcpw4yhb-xorriso-1.5.7-unstable-2023-12-06",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/w2jhxfgl6gz6bwv3105gshc69rx3ymh7-xorriso-1.5.7-unstable-2023-12-06-man",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/dwxnypdmb5n5mgspm8xy96gkgcpw4yhb-xorriso-1.5.7-unstable-2023-12-06"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/77900r9s3phz2qqr6xrhpfcfmf5wrcam-xorriso-1.5.7-unstable-2023-12-06",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/2dp7j952gmraq27g3q618ll0yfkyw145-xorriso-1.5.7-unstable-2023-12-06-man",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/77900r9s3phz2qqr6xrhpfcfmf5wrcam-xorriso-1.5.7-unstable-2023-12-06"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2by4s8q42bxggib6yl512cnwdj19ig8l-xorriso-1.5.7-unstable-2023-12-06",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/lifvxkwvswygid4f2m6dk1kmzgxh9dav-xorriso-1.5.7-unstable-2023-12-06-man",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2by4s8q42bxggib6yl512cnwdj19ig8l-xorriso-1.5.7-unstable-2023-12-06"
         }
       }
     },
