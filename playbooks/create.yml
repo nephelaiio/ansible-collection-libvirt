@@ -170,8 +170,7 @@
   hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
   become: true
-  vars:
-    ansible_connection: local
+  connection: local
   tasks:
     - name: Create guest SSH key
       become: false
