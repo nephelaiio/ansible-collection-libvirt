@@ -25,3 +25,9 @@
         _platform_names: "{{ _libvirt_platform_data | map(attribute='name') }}"
         _macaddr_data: "{{ _platform_names | map('extract', hostvars, '_libvirt_macaddr') }}"
         _macaddr_list: "{{ _macaddr_data | map('nephelaiio.plugins.map_format', _macaddr_tpl) | map('ansible.builtin.from_json') }}"
+      when: libvirt_macaddr_facts | default(True) | bool
+
+    - name: Set platform facts
+      ansible.builtin.set_fact:
+        _libvirt_platforms: "{{ _libvirt_platform_data }}"
+      when: not (libvirt_macaddr_facts | default(True) | bool)

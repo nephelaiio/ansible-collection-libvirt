@@ -1,4 +1,8 @@
 ---
+- name: Gather localhost facts
+  hosts: localhost
+  gather_facts: true
+
 - name: Set collection defaults
   hosts: "{{ libvirt_guests | default('all') }}:localhost"
   gather_facts: false
@@ -13,23 +17,29 @@
       ansible.builtin.set_fact:
         # Overridable values
         _libvirt_network: "{{ _network_name }}"
+        _libvirt_bridge: "{{ _network_name }}br0"
         _libvirt_address: "{{ _network_addr }}"
-        _libvirt_user: "{{ libvirt_user | default('molecule') }}"
+        _libvirt_daemon_user: "{{ lookup('ansible.builtin.env', 'USER', default='libvirt-qemu') }}"
+        _libvirt_daemon_group: "{{ lookup('ansible.builtin.env', 'USER', default='libvirt-qemu') }}"
         _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
-        _libvirt_pool: "{{ libvirt_pool | default(_network_name) }}"
+        _libvirt_pool: "{{ _pool_name }}"
         _libvirt_path: "{{ libvirt_path | default(_path_pool) }}"
-        _libvirt_guestdir: "{{ _path_guest }}"
-        _libvirt_purge: "{{ lookup('ansible.builtin.env', 'LIBVIRT_PURGE', default=False) }}"
+        _libvirt_guest_user: "{{ libvirt_user | default('molecule') }}"
+        _libvirt_guest_dir: "{{ _path_pool }}"
         _libvirt_logdir: "{{ _path_log }}"
         _libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('90') }}"
         _libvirt_resolvers: "{{ [libvirt_resolvers | default(['1.1.1.1', '8.8.8.8'])] | flatten }}"
+        _libvirt_privkey: "{{ _path_pool }}/id_rsa"
+        _libvirt_inventory_path: "{{ _path_pool }}/inventory"
       vars:
-        _network_name: "{{ libvirt_network | default('molecule') }}"
+        _project_temp: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
+        _project_path: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+        _project_name: "{{ _project_path | basename | replace('_', '-') | replace('.', '-') }}"
+        _network_name: "{{ libvirt_network | default('molecule') | trim }}"
+        _pool_name: "{{ libvirt_pool | default('libvirt') }}"
         _network_addr: "{{ libvirt_address | default('172.31.252.1/24') }}"
-        _path_pool: "/var/lib/libvirt/{{ _network_name }}"
-        _path_temp: "/tmp/{{ _network_name }}"
-        _path_guest: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY', default=_path_temp) }}"
-        _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_guest + '/logs') }}"
+        _path_pool: "{{ _project_path }}/libvirt/{{ _project_name }}"
+        _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_pool + '/logs') }}"
 
     - name: Set host defaults
       ansible.builtin.set_fact:

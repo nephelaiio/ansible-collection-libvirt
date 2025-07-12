@@ -24,9 +24,9 @@
             _guest_mem: "{{ _guest.mem | default(2) }}"
             _guest_index: "{{ _guest.index }}"
             _guest_disk: "{{ _libvirt_path }}/{{ _guest.name }}.img"
-            _guest_nbddisk: "{{ _libvirt_guestdir }}/{{ _guest.name }}.raw"
+            _guest_nbddisk: "{{ _libvirt_guest_dir }}/{{ _guest.name }}.raw"
             _guest_nbddev: "/dev/nbd{{ _guest.index }}"
-            _guest_nbddir: "{{ _libvirt_guestdir }}/{{ _guest.name }}"
+            _guest_nbddir: "{{ _libvirt_guest_dir }}/{{ _guest.name }}"
           vars:
             _guest: "{{ _platform | first }}"
 
@@ -93,7 +93,7 @@
                 _temp_disk: "{{ _libvirt_tmpdir.path }}/{{ _guest_disk | basename }}"
               block:
                 - name: Stop KVM guest
-                  ansible.builtin.shell: "virsh suspend {{ _guest_name }} > /dev/null"
+                  ansible.builtin.shell: "virsh -c qemu:///system suspend {{ _guest_name }} > /dev/null"
 
                 - name: Copy NBD disk to temp image
                   ansible.builtin.copy:
@@ -113,7 +113,7 @@
                   changed_when: false
 
                 - name: Resume KVM guest
-                  ansible.builtin.command: "virsh resume {{ _guest_name }}"
+                  ansible.builtin.command: "virsh -c qemu:///system resume {{ _guest_name }}"
                   ignore_errors: true
 
             - name: Connect disk image to NBD device
