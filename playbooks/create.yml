@@ -219,7 +219,7 @@
         dest: "{{ _libvirt_inventory_path }}/group_vars/all/molecule.yml"
         content: |
           ---
-          ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         mode: "u=rw,g=r,o="
 
 - name: Create SSH keys
