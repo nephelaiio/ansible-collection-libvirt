@@ -46,6 +46,7 @@
         - name: Query libvirt pools
           ansible.builtin.command: "virsh -c qemu:///system pool-list --name --all"
           register: _pools
+          become: "{{ _libvirt_become | bool }}"
           changed_when: false
 
         - name: Set pool facts
@@ -58,10 +59,12 @@
             - name: Destroy libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
               ignore_errors: true
+              become: "{{ _libvirt_become | bool }}"
               changed_when: true
 
             - name: Undefine libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-undefine {{ _libvirt_pool }}"
+              become: "{{ _libvirt_become | bool }}"
               changed_when: true
 
         - name: Create libvirt pool
@@ -77,20 +80,24 @@
 
             - name: Define libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-define {{ _libvirt_tmpdir.path }}/pool.j2.xml --validate"
+              become: "{{ _libvirt_become | bool }}"
               changed_when: true
 
             - name: Start libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-start {{ _libvirt_pool }}"
+              become: "{{ _libvirt_become | bool }}"
               changed_when: true
 
         - name: Query libvirt networks
           ansible.builtin.command: "virsh -c qemu:///system net-list --name --all"
           register: _net_query
+          become: "{{ _libvirt_become | bool }}"
           changed_when: false
 
         - name: Query inactive libvirt networks
           ansible.builtin.command: "virsh -c qemu:///system net-list --inactive --name"
           register: _net_inactive_query
+          become: "{{ _libvirt_become | bool }}"
           changed_when: false
 
         - name: Set libvirt network facts
@@ -125,14 +132,17 @@
 
             - name: Add libvirt network
               ansible.builtin.command: "virsh -c qemu:///system net-define {{ _libvirt_tmpdir.path }}/network.j2.xml --validate"
+              become: "{{ _libvirt_become | bool }}"
               changed_when: _libvirt_network_create | bool
 
             - name: Set libvirt network autostart
               ansible.builtin.command: "virsh -c qemu:///system net-autostart {{ _libvirt_network }}"
+              become: "{{ _libvirt_become | bool }}"
               changed_when: _libvirt_network_create | bool
 
         - name: Start libvirt network
           ansible.builtin.command: "virsh -c qemu:///system net-start {{ _libvirt_network }}"
+          become: "{{ _libvirt_become | bool }}"
           when: (_libvirt_network_create | bool) or (_libvirt_network_inactive | bool)
 
       always:
@@ -281,6 +291,7 @@
       ansible.builtin.command: virsh -c qemu:///system list --name --all
       run_once: true
       register: _libvirt_guest_query
+      become: "{{ _libvirt_become | bool }}"
       changed_when: false
       delegate_to: localhost
 
@@ -393,6 +404,7 @@
 
             - name: Create KVM guest
               ansible.builtin.command: "virsh -c qemu:///system create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
+              become: "{{ _libvirt_become | bool }}"
 
           always:
             - name: Destroy cloud-init tempdir
@@ -407,6 +419,7 @@
           ansible.builtin.command: virsh -c qemu:///system list --name --all --state-running
           run_once: true
           register: _libvirt_guest_query
+          become: "{{ _libvirt_become | bool }}"
           changed_when: false
 
         - name: Set active KVM guest facts
@@ -415,6 +428,7 @@
 
         - name: Start KVM guest
           ansible.builtin.command: "virsh -c qemu:///system start {{ inventory_hostname }}"
+          become: "{{ _libvirt_become | bool }}"
           when: inventory_hostname not in _libvirt_guest_list
 
     - name: Override KVM guest configuration settings
