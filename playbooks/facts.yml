@@ -17,7 +17,7 @@
       vars:
         _libvirt_instance_data: "{{ libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
 
-    - name: Set platform facts
+    - name: Set full platform facts
       ansible.builtin.set_fact:
         _libvirt_platforms: "{{ _libvirt_platform_data | zip(_macaddr_list) | map('ansible.builtin.combine') }}"
       vars:
@@ -27,7 +27,7 @@
         _macaddr_list: "{{ _macaddr_data | map('nephelaiio.plugins.map_format', _macaddr_tpl) | map('ansible.builtin.from_json') }}"
       when: libvirt_macaddr_facts | default(True) | bool
 
-    - name: Set platform facts
+    - name: Set partial platform facts
       ansible.builtin.set_fact:
         _libvirt_platforms: "{{ _libvirt_platform_data }}"
       when: not (libvirt_macaddr_facts | default(True) | bool)

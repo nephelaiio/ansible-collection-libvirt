@@ -6,6 +6,7 @@ ignore: |
   *.j2.yml
   .devbox/
   .venv/
+  ansible_collections/
 
 rules:
   braces:

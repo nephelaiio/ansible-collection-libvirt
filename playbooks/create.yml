@@ -212,6 +212,7 @@
           ---
           ansible_connection: local
           ansible_python_interpreter: python
+        mode: "u=rw,g=r,o="
 
     - name: Create molecule groupvars configuration
       ansible.builtin.copy:
@@ -219,6 +220,7 @@
         content: |
           ---
           ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        mode: "u=rw,g=r,o="
 
 - name: Create SSH keys
   hosts: localhost
