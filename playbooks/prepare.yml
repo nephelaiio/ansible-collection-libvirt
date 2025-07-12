@@ -49,6 +49,7 @@
             msg: |
               User '{{ _libvirt_daemon_user }}' is not in the 'libvirt' group. Please add the user to the group.
               sudo usermod -a -G libvirt $USER
+          when: not (_libvirt_become | bool)
 
         - name: Configure libvirt-qemu daemon user
           ansible.builtin.lineinfile:
