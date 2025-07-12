@@ -1,13 +1,14 @@
 ---
+- name: Set host facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+  vars:
+    libvirt_macaddr_facts: false
+
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
-- name: Set host facts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
-
 - name: Destroy KVM guests
   hosts: localhost
-  become: true
   vars:
     ansible_connection: local
   tasks:
@@ -19,7 +20,7 @@
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
     - name: Query active KVM guests
-      ansible.builtin.command: "virsh list --name --state-running"
+      ansible.builtin.command: "virsh -c qemu:///system list --name --state-running"
       register: _libvirt_guest_query_active
       changed_when: false
 
@@ -30,11 +31,11 @@
         _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
 
     - name: Stop KVM guests
-      ansible.builtin.command: "virsh destroy {{ item }}"
+      ansible.builtin.command: "virsh -c qemu:///system destroy {{ item }}"
       loop: "{{ _libvirt_guest_list_active }}"
 
     - name: Query all KVM guests
-      ansible.builtin.command: "virsh list --all --name"
+      ansible.builtin.command: "virsh -c qemu:///system list --all --name"
       register: _libvirt_guest_query_all
       changed_when: false
 
@@ -45,7 +46,7 @@
         _libvirt_guest_names_all: "{{ _libvirt_guest_query_all.stdout_lines | map('trim') | list }}"
 
     - name: Undefine KVM guests
-      ansible.builtin.command: "virsh undefine {{ item }}"
+      ansible.builtin.command: "virsh -c qemu:///system undefine {{ item }}"
       loop: "{{ _libvirt_guest_list_all }}"
 
     - name: Set disk location facts
@@ -66,7 +67,6 @@
 
 - name: Destroy KVM resources
   hosts: localhost
-  become: true
   vars:
     ansible_connection: local
   tasks:
@@ -75,31 +75,37 @@
       block:
         - name: Verify required parameters
           ansible.builtin.assert:
-            that:
-              - _libvirt_network is defined
-              - _libvirt_address is defined
+            that: _libvirt_network is defined
 
         - name: Query active KVM networks
-          ansible.builtin.command: "virsh net-list --name"
+          ansible.builtin.command: "virsh -c qemu:///system net-list --name"
           register: _libvirt_net_query
           changed_when: false
 
-        - name: Destroy active libvirt network
-          ansible.builtin.command: "virsh net-destroy {{ _libvirt_network }}"
-          vars:
-            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
-          when: _libvirt_network in _libvirt_net_list
+        - name: Destroy libvirt network
+          when:
+            - libvirt_purge_network | default(False) | bool
+            - _libvirt_network in _libvirt_net_list
+          block:
+            - name: Destroy active libvirt network
+              ansible.builtin.command: "virsh -c qemu:///system net-destroy {{ _libvirt_network }}"
+              vars:
+                _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
 
-        - name: Query inactive KVM networks
-          ansible.builtin.command: "virsh net-list --name --all"
-          register: _libvirt_net_query
-          changed_when: false
+            - name: Query inactive KVM networks
+              ansible.builtin.command: "virsh -c qemu:///system net-list --name --all"
+              register: _libvirt_net_query
+              changed_when: false
 
-        - name: Undefine inactive libvirt network
-          ansible.builtin.command: "virsh net-undefine {{ _libvirt_network }}"
-          vars:
-            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
-          when: _libvirt_network in _libvirt_net_list
+            - name: Undefine inactive libvirt network
+              ansible.builtin.command: "virsh -c qemu:///system net-undefine {{ _libvirt_network }}"
+              vars:
+                _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
+
+            - name: Destroy bridge interface
+              ansible.builtin.command: "ip link delete {{ _libvirt_bridge }}"
+              when: _libvirt_bridge in ansible_facts['interfaces']
+              become: true
 
         - name: Delete host file entries
           ansible.builtin.lineinfile:
@@ -107,33 +113,22 @@
             regexp: ".*{{ item }}.*"
             state: absent
           loop: "{{ _libvirt_platforms | map(attribute='name') }}"
+          become: true
 
         - name: Delete libvirt pool
-          when: _libvirt_purge | bool
           block:
-            - name: Delete cached images
-              ansible.builtin.file:
-                dest: "{{ item }}"
-                state: absent
-              vars:
-                _platform_images: "{{ _libvirt_platforms | selectattr('image', 'defined') }}"
-                _platform_image_urls: "{{ _platform_images | map(attribute='image') | ansible.builtin.unique }}"
-                _platform_image_basenames: "{{ _platform_image_urls | map('urlsplit', 'path') | map('basename') }}"
-                _platform_image_paths: "{{ [_libvirt_path] | zip(_platform_image_basenames) | map('join', '/') }}"
-              loop: "{{ _platform_image_paths }}"
-
             - name: Query libvirt pools
-              ansible.builtin.command: "virsh pool-list --name"
-              register: pool_query
+              ansible.builtin.command: "virsh -c qemu:///system pool-list --name"
+              register: _pool_query
 
             - name: Set pool facts
               ansible.builtin.set_fact:
-                _libvirt_pool_list: "{{ _pools.stdout_lines | map('trim') | list }}"
+                _libvirt_pool_list: "{{ _pool_query.stdout_lines | map('trim') | list }}"
 
             - name: Destroy libvirt pool
-              ansible.builtin.command: "virsh pool-destroy {{ _libvirt_pool }}"
-              when: _libvirt_pool in _libvirt_pool_list
+              ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
+              when: (_libvirt_pool | trim) in _libvirt_pool_list
 
             - name: Undefine libvirt pool
-              ansible.builtin.command: "virsh pool-undefine {{ _libvirt_pool }}"
-              when: _libvirt_pool in _libvirt_pool_list
+              ansible.builtin.command: "virsh -c qemu:///system pool-undefine {{ _libvirt_pool }}"
+              when: (_libvirt_pool | trim) in _libvirt_pool_list
