@@ -7,9 +7,7 @@
 
 - name: Configure guests
   hosts: localhost
-  become: true
-  vars:
-    ansible_connection: local
+  connection: local
   tasks:
     - name: Debug vardefs
       ansible.builtin.debug:
@@ -22,9 +20,19 @@
       ansible.builtin.file:
         path: "{{ _libvirt_path }}"
         state: directory
-        owner: root
-        group: root
-        mode: 0755
+        owner: "{{ _libvirt_daemon_user }}"
+        group: "{{ _libvirt_daemon_group }}"
+        mode: "u=rwx,g=rx,o=rx"
+      become: true
+
+    - name: Grant playbook user access to libvirt path
+      ansible.posix.acl:
+        path: "{{ _libvirt_path }}"
+        entity: "{{ ansible_env.USER }}"
+        etype: user
+        permissions: rwx
+        state: present
+      become: true
 
     - name: Create libvirt tempdir
       ansible.builtin.tempfile:
@@ -33,27 +41,30 @@
       register: _libvirt_tmpdir
       changed_when: false
 
-    - name: Manage libvirt network
+    - name: Manage libvirt pool and network
       block:
         - name: Query libvirt pools
-          ansible.builtin.command: "virsh pool-list --name"
+          ansible.builtin.command: "virsh -c qemu:///system pool-list --name --all"
           register: _pools
           changed_when: false
-
-        - name: Debug libvirt pools
-          ansible.builtin.debug:
-            var: _pools.stdout_lines
-
-        - name: Debug target pool
-          ansible.builtin.debug:
-            var: _libvirt_pool
 
         - name: Set pool facts
           ansible.builtin.set_fact:
             _libvirt_pool_list: "{{ _pools.stdout_lines | map('trim') | list }}"
 
+        - name: Destroy libvirt pool
+          when: _libvirt_pool in _libvirt_pool_list
+          block:
+            - name: Destroy libvirt pool
+              ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
+              ignore_errors: true
+              changed_when: true
+
+            - name: Undefine libvirt pool
+              ansible.builtin.command: "virsh -c qemu:///system pool-undefine {{ _libvirt_pool }}"
+              changed_when: true
+
         - name: Create libvirt pool
-          when: _libvirt_pool not in _libvirt_pool_list
           block:
             - name: Create libvirt pool template
               ansible.builtin.template:
@@ -65,26 +76,33 @@
                 _pool_path: "{{ _libvirt_path }}"
 
             - name: Define libvirt pool
-              ansible.builtin.command: "virsh pool-define {{ _libvirt_tmpdir.path }}/pool.j2.xml --validate"
-              changed_when: _libvirt_pool not in _pools.stdout_lines
+              ansible.builtin.command: "virsh -c qemu:///system pool-define {{ _libvirt_tmpdir.path }}/pool.j2.xml --validate"
+              changed_when: true
 
             - name: Start libvirt pool
-              ansible.builtin.command: "virsh pool-start {{ _libvirt_pool }}"
-              ignore_errors: true
-              changed_when: _libvirt_pool not in _pools.stdout_lines
+              ansible.builtin.command: "virsh -c qemu:///system pool-start {{ _libvirt_pool }}"
+              changed_when: true
 
         - name: Query libvirt networks
-          ansible.builtin.command: "virsh net-list --name"
+          ansible.builtin.command: "virsh -c qemu:///system net-list --name --all"
           register: _net_query
+          changed_when: false
+
+        - name: Query inactive libvirt networks
+          ansible.builtin.command: "virsh -c qemu:///system net-list --inactive --name"
+          register: _net_inactive_query
           changed_when: false
 
         - name: Set libvirt network facts
           ansible.builtin.set_fact:
-            _libvirt_network_create: "{{ not _libvirt_network_default and not _libvirt_network_exists }}"
+            _libvirt_network_create: "{{ (_libvirt_network_custom | bool) and not (_libvirt_network_exists | bool) }}"
+            _libvirt_network_present: "{{ _libvirt_network_exists }}"
+            _libvirt_network_inactive: "{{ (_libvirt_network | trim) in _libvirt_network_inactive_list }}"
           vars:
             _libvirt_network_list: "{{ _net_query.stdout_lines | map('trim') | list }}"
-            _libvirt_network_exists: "{{ _libvirt_network in _libvirt_network_list }}"
-            _libvirt_network_default: "{{ _libvirt_network == 'default' }}"
+            _libvirt_network_exists: "{{ (_libvirt_network | trim) in _libvirt_network_list }}"
+            _libvirt_network_custom: "{{ _libvirt_network != 'default' }}"
+            _libvirt_network_inactive_list: "{{ _net_inactive_query.stdout_lines | map('trim') | list }}"
 
         - name: Create libvirt network
           when: _libvirt_network_create | bool
@@ -95,22 +113,27 @@
                 dest: "{{ _libvirt_tmpdir.path }}/network.j2.xml"
                 mode: "u=rw,g=r,o="
               vars:
-                _net_name: "{{ _libvirt_network }}"
+                _net_name: "{{ _libvirt_network | trim }}"
                 _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
                 _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
+                _net_bridge: "{{ _libvirt_bridge }}"
+
+            - name: Debug libvirt network definition
+              ansible.builtin.debug:
+                msg: |
+                  {{ lookup('ansible.builtin.file', _libvirt_tmpdir.path + '/network.j2.xml') }}
 
             - name: Add libvirt network
-              ansible.builtin.command: "virsh net-define {{ _libvirt_tmpdir.path }}/network.j2.xml --validate"
-              changed_when: _libvirt_network_create | bool
-
-            - name: Start libvirt network
-              ansible.builtin.command: "virsh net-start {{ _libvirt_network }}"
-              ignore_errors: true
+              ansible.builtin.command: "virsh -c qemu:///system net-define {{ _libvirt_tmpdir.path }}/network.j2.xml --validate"
               changed_when: _libvirt_network_create | bool
 
             - name: Set libvirt network autostart
-              ansible.builtin.command: "virsh net-autostart {{ _libvirt_network }}"
+              ansible.builtin.command: "virsh -c qemu:///system net-autostart {{ _libvirt_network }}"
               changed_when: _libvirt_network_create | bool
+
+        - name: Start libvirt network
+          ansible.builtin.command: "virsh -c qemu:///system net-start {{ _libvirt_network }}"
+          when: (_libvirt_network_create | bool) or (_libvirt_network_inactive | bool)
 
       always:
         - name: Destroy libvirt tempdir
@@ -159,40 +182,76 @@
       ansible.builtin.get_url:
         url: "{{ item.url }}"
         dest: "{{ item.path }}"
-        owner: root
-        group: root
-        mode: 0600
+        mode: "u=rw,g=r,o=r"
       loop_control:
         label: "{{ item.url }} -> {{ item.path }}"
       loop: "{{ platform_image_uncached }}"
 
-- name: Create KVM guests
-  hosts: "{{ libvirt_guests | default('all') }}"
+    - name: Create hostvars directory
+      ansible.builtin.file:
+        dest: "{{ _libvirt_inventory_path }}/host_vars"
+        state: directory
+        mode: "u=rwx,g=rx,o=rx"
+
+    - name: Create groupvars directory
+      ansible.builtin.file:
+        dest: "{{ _libvirt_inventory_path }}/group_vars"
+        state: directory
+        mode: "u=rwx,g=rx,o=rx"
+
+    - name: Create groupvars all directory
+      ansible.builtin.file:
+        dest: "{{ _libvirt_inventory_path }}/group_vars/all"
+        state: directory
+        mode: "u=rwx,g=rx,o=rx"
+
+    - name: Create localhost hostvars
+      ansible.builtin.copy:
+        dest: "{{ _libvirt_inventory_path }}/host_vars/localhost.yml"
+        content: |
+          ---
+          ansible_connection: local
+          ansible_python_interpreter: python
+
+    - name: Create molecule groupvars configuration
+      ansible.builtin.copy:
+        dest: "{{ _libvirt_inventory_path }}/group_vars/all/molecule.yml"
+        content: |
+          ---
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+- name: Create SSH keys
+  hosts: localhost
   gather_facts: false
-  become: true
   tasks:
     - name: Create guest SSH key
-      become: false
-      run_once: true
-      delegate_to: localhost
       block:
-        - name: Create guest dir
-          ansible.builtin.file:
-            path: "{{ _libvirt_guestdir }}"
-            state: directory
-            mode: 0755
+        - name: Stat SSH key pair
+          ansible.builtin.stat:
+            path: "{{ _libvirt_privkey }}"
+          register: _libvirt_privkey_query
 
         - name: Create SSH key
           community.crypto.openssh_keypair:
-            path: "{{ _libvirt_guestdir }}/id_rsa"
+            path: "{{ _libvirt_privkey }}"
           run_once: true
           register: _pubkey
+          when: not _libvirt_privkey_query.stat.exists
 
-        - name: Register controller privkey facts
+        - name: Slurp SSH public key
+          ansible.builtin.slurp:
+            src: "{{ _libvirt_privkey }}.pub"
+          register: _libvirt_pubkey_query
+
+        - name: Set SSH public key fact
           ansible.builtin.set_fact:
-            guest_privkey: "{{ _pubkey.filename }}"
-          delegate_facts: true
+            _libvirt_pubkey: "{{ _libvirt_pubkey_query.content | b64decode | trim }}"
 
+- name: Create KVM guests
+  hosts: "{{ libvirt_guests | default('all') }}"
+  gather_facts: false
+  connection: local
+  tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
         guest_image: "{{ _platform.image | default('') }}"
@@ -200,10 +259,10 @@
         guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
         guest_disk_size: "{{ _platform.size | default('20G') }}"
         guest_gateway: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
-        guest_user: "{{ _libvirt_user }}"
+        guest_user: "{{ _libvirt_guest_user }}"
         guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
-        guest_pubkey: "{{ _pubkey.public_key }}"
-        guest_privkey: "{{ _pubkey.filename }}"
+        guest_pubkey: "{{ hostvars['localhost']['_libvirt_pubkey'] }}"
+        guest_privkey: "{{ _libvirt_privkey }}"
         guest_hostname: "{{ inventory_hostname }}"
         guest_disk_format: qcow2
         guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
@@ -216,111 +275,152 @@
       vars:
         _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
 
-    - name: Create KVM guest
+    - name: Query KVM guests
+      ansible.builtin.command: virsh -c qemu:///system list --name --all
+      run_once: true
+      register: _libvirt_guest_query
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Set KVM guest facts
+      ansible.builtin.set_fact:
+        _libvirt_guest_list: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
+
+    - name: Manage KVM guests
+      when: inventory_hostname not in _libvirt_guest_list
+      delegate_to: localhost
+      block:
+        - name: Create KVM guest disks
+          when: guest_image != ''
+          block:
+            - name: Stat libvirt path
+              ansible.builtin.stat:
+                dest: "{{ _libvirt_path }}"
+              register: _libvirt_path_query
+
+            - name: Create libvirt path
+              ansible.builtin.file:
+                path: "{{ _libvirt_path }}"
+                state: directory
+                mode: "u=rwx,g=rwx,o=rx"
+                owner: "{{ _libvirt_daemon_user }}"
+                group: "{{ _libvirt_daemon_group }}"
+              when: not _libvirt_path_query.stat.exists
+
+            - name: Create KVM guest disks
+              ansible.builtin.copy:
+                src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
+                dest: "{{ guest_disk_path }}"
+                remote_src: true
+                mode: "u=rw,g=r,o="
+
+            - name: Resize KVM guest disks
+              ansible.builtin.command:
+                cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
+
+        - name: Create KVM pxe disks
+          ansible.builtin.command:
+            cmd: "qemu-img create -f qcow2 {{ guest_disk_path }} {{ guest_disk_size }}"
+          when: guest_image == ''
+          become: true
+
+        - name: Manage KVM disk permissions
+          ansible.builtin.file:
+            dest: "{{ guest_disk_path }}"
+            state: file
+            owner: "{{ _libvirt_daemon_user }}"
+            group: "{{ _libvirt_daemon_group }}"
+            mode: "u=rw,g=rw,o=rw"
+          become: true
+
+        - name: Create cloud-init tempdir
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: libvirt
+          register: libvirt_tmpdir
+
+        - name: Create KVM guest
+          block:
+            - name: Create cloud-init meta data
+              ansible.builtin.template:
+                src: "meta-data.yml.j2"
+                dest: "{{ libvirt_tmpdir.path }}/meta-data"
+                mode: "u=rw,g=r,o="
+
+            - name: Create cloud-init user data
+              ansible.builtin.template:
+                src: "user-data.yml.j2"
+                dest: "{{ libvirt_tmpdir.path }}/user-data"
+                mode: "u=rw,g=r,o="
+
+            - name: Create cloud-init network data
+              ansible.builtin.template:
+                src: "network-config.yml.j2"
+                dest: "{{ libvirt_tmpdir.path }}/network-config"
+                mode: "u=rw,g=r,o="
+              when: not guest_dhcp
+
+            - name: Detect xorriso binary
+              ansible.builtin.command: "which xorriso"
+              register: _xorriso_query
+              changed_when: false
+
+            - name: Create cloud-init iso
+              ansible.builtin.command:
+                cmd: |
+                  {{ _xorriso_query.stdout }} -as mkisofs
+                  -volid cidata -joliet -rock
+                  -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
+                chdir: "{{ libvirt_tmpdir.path }}"
+              become: true
+
+            - name: Manage cloud-init disk permissions
+              ansible.builtin.file:
+                dest: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
+                state: file
+                owner: "{{ _libvirt_daemon_user }}"
+                group: "{{ _libvirt_daemon_group }}"
+                mode: "u=rw,g=rw,o=rw"
+              become: true
+
+            - name: Template KVM guest XML
+              ansible.builtin.template:
+                src: "vm.j2.xml"
+                dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
+                mode: "u=rw,g=r,o="
+
+            - name: Create KVM guest
+              ansible.builtin.command: "virsh -c qemu:///system create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
+
+          always:
+            - name: Destroy cloud-init tempdir
+              ansible.builtin.file:
+                dest: "{{ libvirt_tmpdir.path }}"
+                state: absent
+
+    - name: Start KVM guest
       delegate_to: localhost
       block:
         - name: Query active KVM guests
-          ansible.builtin.command: virsh list --name
+          ansible.builtin.command: virsh -c qemu:///system list --name --all --state-running
           run_once: true
           register: _libvirt_guest_query
           changed_when: false
 
-        - name: Set guest facts
+        - name: Set active KVM guest facts
           ansible.builtin.set_fact:
             _libvirt_guest_list: "{{ _libvirt_guest_query.stdout_lines | map('trim') | list }}"
 
-        - name: Manage KVM guests
-          when: inventory_hostname not in _libvirt_guest_list
-          block:
-            - name: Create KVM guest disks
-              when: guest_image != ''
-              block:
-                - name: Create KVM guest disks
-                  ansible.builtin.copy:
-                    src: "{{ _libvirt_path }}/{{ guest_image | urlsplit('path') | basename }}"
-                    dest: "{{ guest_disk_path }}"
-                    remote_src: true
-                    mode: "u=rw,g=r,o="
-
-                - name: Resize KVM guest disks
-                  ansible.builtin.command:
-                    cmd: qemu-img resize {{ guest_disk_path }} {{ guest_disk_size }}
-
-            - name: Create KVM pxe disks
-              ansible.builtin.command:
-                cmd: "qemu-img create -f qcow2 {{ guest_disk_path }} {{ guest_disk_size }}"
-              when: guest_image == ''
-
-            - name: Manage KVM disk permissions
-              ansible.builtin.file:
-                dest: "{{ guest_disk_path }}"
-                state: file
-                owner: "{{ (_host_os_family == 'Debian') | ternary('libvirt-qemu', 'qemu') }}"
-                group: kvm
-                mode: 0666
-              vars:
-                _host_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
-
-            - name: Create cloud-init tempdir
-              ansible.builtin.tempfile:
-                state: directory
-                prefix: libvirt
-              register: libvirt_tmpdir
-
-            - name: Create KVM guest
-              block:
-                - name: Create cloud-init meta data
-                  ansible.builtin.template:
-                    src: "meta-data.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/meta-data"
-                    mode: "u=rw,g=r,o="
-
-                - name: Create cloud-init user data
-                  ansible.builtin.template:
-                    src: "user-data.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/user-data"
-                    mode: "u=rw,g=r,o="
-
-                - name: Create cloud-init network data
-                  ansible.builtin.template:
-                    src: "network-config.yml.j2"
-                    dest: "{{ libvirt_tmpdir.path }}/network-config"
-                    mode: "u=rw,g=r,o="
-                  when: not guest_dhcp
-
-                - name: Create cloud-init iso
-                  ansible.builtin.command:
-                    cmd: |
-                      xorriso -as mkisofs
-                      -volid cidata -joliet -rock
-                      -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
-                    chdir: "{{ libvirt_tmpdir.path }}"
-
-                - name: Template KVM guest XML
-                  ansible.builtin.template:
-                    src: "vm.j2.xml"
-                    dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
-                    mode: "u=rw,g=r,o="
-
-                - name: Create KVM guest
-                  ansible.builtin.command: "virsh create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
-
-              always:
-                - name: Destroy cloud-init tempdir
-                  ansible.builtin.file:
-                    dest: "{{ libvirt_tmpdir.path }}"
-                    state: absent
-
         - name: Start KVM guest
-          ansible.builtin.command: "virsh start {{ inventory_hostname }}"
-          ignore_errors: true
+          ansible.builtin.command: "virsh -c qemu:///system start {{ inventory_hostname }}"
+          when: inventory_hostname not in _libvirt_guest_list
 
     - name: Override KVM guest configuration settings
       ansible.builtin.add_host:
         hostname: "{{ item.name }}"
         ansible_host: "{{ item.ipaddr | ansible.utils.ipaddr('address') }}"
-        ansible_user: "{{ _libvirt_user }}"
-        ansible_ssh_private_key_file: "{{ _pubkey.filename }}"
+        ansible_user: "{{ _libvirt_guest_user }}"
+        ansible_ssh_private_key_file: "{{ _libvirt_privkey }}"
         ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
       loop_control:
         label: "{{ item.name }}"
@@ -338,8 +438,8 @@
       vars:
         _instance:
           port: 22
-          user: "{{ _libvirt_user }}"
-          identity_file: "{{ guest_privkey }}"
+          user: "{{ _libvirt_guest_user }}"
+          identity_file: "{{ _libvirt_privkey }}"
         _aliases:
           name: instance
           ipaddr: address
@@ -351,6 +451,10 @@
         - name: Debug instance config
           ansible.builtin.debug:
             var: _platform_molecule
+
+        - name: Debug instance config location
+          ansible.builtin.debug:
+            var: molecule_instance_config
 
         - name: Dump instance config
           ansible.builtin.copy:

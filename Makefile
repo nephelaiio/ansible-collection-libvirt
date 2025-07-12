@@ -4,6 +4,8 @@ MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR := $(dir $(MAKEFILE_PATH))
 
 MOLECULE_SCENARIO ?= default
+MOLECULE_DEBUG ?=
+ANSIBLE_VERBOSITY ?= 0
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= jammy
 EL_RELEASE ?= 9
@@ -71,6 +73,7 @@ rocky9:
 	make rocky EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 test: lint
+	rm -rf ansible_collections
 	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
 	uv run molecule $@ -s ${MOLECULE_SCENARIO}
@@ -110,6 +113,9 @@ ifeq (login,$(firstword $(MAKECMDGOALS)))
 endif
 
 dependency create prepare converge idempotence side-effect verify destroy reset list purge login:
+	rm -rf ansible_collections
+	ANSIBLE_VERBOSITY=${ANSIBLE_VERBOSITY} \
+	MOLECULE_DEBUG=${MOLECULE_DEBUG} \
 	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
 	LIBVIRT_PURGE=$(PURGE_ARGS) \
@@ -119,6 +125,8 @@ ignore:
 	@uv run ansible-lint --generate-ignore
 
 clean: destroy reset
+	rm -rf ansible_collections
+	rm -rf libvirt
 	@uv env remove $$(which python) >/dev/null 2>&1 || exit 0
 
 publish: build

@@ -1,9 +1,9 @@
 {
-  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
   "packages": [
-    "python@3.11.11",
+    "python@3.12",
     "libvirt@latest",
-    "networkmanager@latest",
+    "libisoburn@latest",
     "expect@latest",
     "gnupg@latest",
     "xfsprogs@latest",
@@ -13,7 +13,7 @@
   ],
   "env": {},
   "shell": {
-    "init_hook": [],
-    "scripts":   {}
+    "init_hook": [". .venv/bin/activate"],
+    "scripts": {}
   }
 }

@@ -5,6 +5,5 @@
       <port start='1024' end='65535'/>
     </nat>
   </forward>
-  <bridge name='{{ _net_name }}br0' stp='on' delay='0'/>
   <ip address='{{ _net_address }}' netmask='{{ _net_mask }}'/>
 </network>
