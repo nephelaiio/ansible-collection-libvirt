@@ -88,26 +88,24 @@
           changed_when: false
 
         - name: Destroy libvirt network
+          vars:
+            _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
           when:
             - libvirt_purge_network | default(False) | bool
             - _libvirt_network in _libvirt_net_list
           block:
             - name: Destroy active libvirt network
               ansible.builtin.command: "virsh -c qemu:///system net-destroy {{ _libvirt_network }}"
-              vars:
-                _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
               become: "{{ _libvirt_become | bool }}"
 
             - name: Query inactive KVM networks
-              ansible.builtin.command: "virsh -c qemu:///system net-list --name --all"
+              ansible.builtin.command: "virsh -c qemu:///system net-list --name --inactive"
               register: _libvirt_net_query
               become: "{{ _libvirt_become | bool }}"
               changed_when: false
 
             - name: Undefine inactive libvirt network
               ansible.builtin.command: "virsh -c qemu:///system net-undefine {{ _libvirt_network }}"
-              vars:
-                _libvirt_net_list: "{{ _libvirt_net_query.stdout_lines | map('trim') | list | difference(['default']) }}"
               become: "{{ _libvirt_become | bool }}"
 
             - name: Destroy bridge interface
@@ -123,17 +121,15 @@
           loop: "{{ _libvirt_platforms | map(attribute='name') }}"
           become: true
 
+        - name: Query libvirt pools
+          ansible.builtin.command: "virsh -c qemu:///system pool-list --name"
+          register: _pool_query
+          become: "{{ _libvirt_become | bool }}"
+
         - name: Delete libvirt pool
+          vars:
+            _libvirt_pool_list: "{{ _pool_query.stdout_lines | map('trim') | list }}"
           block:
-            - name: Query libvirt pools
-              ansible.builtin.command: "virsh -c qemu:///system pool-list --name"
-              register: _pool_query
-              become: "{{ _libvirt_become | bool }}"
-
-            - name: Set pool facts
-              ansible.builtin.set_fact:
-                _libvirt_pool_list: "{{ _pool_query.stdout_lines | map('trim') | list }}"
-
             - name: Destroy libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
               become: "{{ _libvirt_become | bool }}"

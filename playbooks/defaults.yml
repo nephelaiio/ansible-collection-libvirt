@@ -38,7 +38,7 @@
         _project_path: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
         _project_name: "{{ _project_path | basename | replace('_', '-') | replace('.', '-') }}"
         _network_name: "{{ libvirt_network | default('molecule') | trim }}"
-        _pool_name: "{{ libvirt_pool | default('libvirt') }}"
+        _pool_name: "{{ libvirt_pool | default(_project_name) }}"
         _network_addr: "{{ libvirt_address | default('172.31.252.1/24') }}"
         _path_pool: "{{ _project_path }}/libvirt/{{ _project_name }}"
         _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_pool + '/logs') }}"
