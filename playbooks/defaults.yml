@@ -19,8 +19,8 @@
         _libvirt_network: "{{ _network_name }}"
         _libvirt_bridge: "{{ _network_name }}br0"
         _libvirt_address: "{{ _network_addr }}"
-        _libvirt_daemon_user: "{{ _project_user }}"
-        _libvirt_daemon_group: "{{ _project_user }}"
+        _libvirt_daemon_user: "{{ _daemon_user }}"
+        _libvirt_daemon_group: "{{ _daemon_user }}"
         _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
         _libvirt_pool: "{{ _pool_name }}"
         _libvirt_path: "{{ libvirt_path | default(_path_pool) }}"
@@ -33,6 +33,7 @@
         _libvirt_inventory_path: "{{ _project_temp }}/inventory"
         _libvirt_become: "{{ _project_user == 'runner' }}"
       vars:
+        _daemon_user: "{{ ansible_os_family | ternary('Debian', 'libvirt-qemu', _project_user) }}"
         _project_user: "{{ lookup('ansible.builtin.env', 'USER', default='libvirt-qemu') }}"
         _project_temp: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
         _project_path: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
