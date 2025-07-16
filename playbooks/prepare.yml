@@ -32,7 +32,7 @@
         _qemu_efi: "qemu-efi{{ '-aarch64' if (_is_ubuntu and _is_noble) else '' }}"
 
     - name: Configure Debian libvirt daemon
-      when: os_family == 'Debian'
+      when: ansible_os_family == 'Debian'
       block:
         - name: Query user groups
           ansible.builtin.command: "groups {{ _libvirt_daemon_user }}"
