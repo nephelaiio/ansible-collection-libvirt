@@ -33,7 +33,8 @@
         _libvirt_inventory_path: "{{ _project_temp }}/inventory"
         _libvirt_become: "{{ _project_user == 'runner' }}"
       vars:
-        _daemon_user: "{{ (ansible_os_family == 'Debian') | ternary('libvirt-qemu', _project_user) }}"
+        _ansible_os_family: "{{ hostvars['localhost']['os_family'] }}"
+        _daemon_user: "{{ (_ansible_os_family == 'Debian') | ternary('libvirt-qemu', _project_user) }}"
         _project_user: "{{ lookup('ansible.builtin.env', 'USER') }}"
         _project_temp: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
         _project_path: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"

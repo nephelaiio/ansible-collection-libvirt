@@ -31,12 +31,8 @@
         _is_noble: "{{ ansible_facts['distribution_version'] is version('24.04', '>=') }}"
         _qemu_efi: "qemu-efi{{ '-aarch64' if (_is_ubuntu and _is_noble) else '' }}"
 
-    - name: Configure Linux libvirt daemon
-      vars:
-        _playbook_user: "{{ lookup('ansible.builtin.env', 'USER', default=ansible_facts['user']) }}"
-      when:
-        - ansible_facts['os_family'] == 'Debian'
-        - _libvirt_daemon_user != 'root'
+    - name: Configure Debian libvirt daemon
+      when: os_family == 'Debian'
       block:
         - name: Query user groups
           ansible.builtin.command: "groups {{ _libvirt_daemon_user }}"
