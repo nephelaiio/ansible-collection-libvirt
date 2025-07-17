@@ -35,7 +35,7 @@ shell:
 	devbox shell
 
 ubuntu:
-	make create prepare converge \
+	make create prepare \
 		MOLECULE_KVM_IMAGE=${UBUNTU_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -49,7 +49,7 @@ focal ubuntu2004:
 	make ubuntu UBUNTU_RELEASE=focal MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 debian:
-	make create prepare converge \
+	make create prepare \
 		MOLECULE_KVM_IMAGE=${DEBIAN_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -57,7 +57,7 @@ bookworm debian12:
 	make debian MOLECULE_SCENARIO=${MOLECULE_SCENARIO} DEBIAN_RELEASE=bookworm
 
 alma:
-	make create prepare converge \
+	make create prepare \
 		MOLECULE_KVM_IMAGE=${ALMA_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
