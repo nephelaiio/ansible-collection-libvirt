@@ -12,7 +12,6 @@
         that:
           - libvirt_platforms is defined
           - libvirt_platforms | length > 0
-      when: libvirt_platforms_check | default(True) | bool
 
     - name: Set host facts
       ansible.builtin.set_fact:

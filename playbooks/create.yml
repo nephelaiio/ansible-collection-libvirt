@@ -2,8 +2,34 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.facts
 
-- name: Prepare guest nodes
-  ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
+- name: Set platform facts
+  hosts: "{{ libvirt_guests | default('all') }}:localhost"
+  gather_facts: false
+  tasks:
+    - name: Set mac address facts
+      ansible.builtin.set_fact:
+        _libvirt_macaddr: "{{ _libvirt_mac_prefix | community.general.random_mac(seed=inventory_hostname) }}"
+
+    - name: Set image facts
+      ansible.builtin.set_fact:
+        _libvirt_image: "{{ _libvirt_instance_data.image | default('') }}"
+      vars:
+        _libvirt_instance_data: "{{ libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+
+    - name: Set full platform facts
+      ansible.builtin.set_fact:
+        _libvirt_platforms: "{{ _libvirt_platform_data | zip(_macaddr_list) | map('ansible.builtin.combine') }}"
+      vars:
+        _macaddr_tpl: '{ "macaddr": "%s" }'
+        _platform_names: "{{ _libvirt_platform_data | map(attribute='name') }}"
+        _macaddr_data: "{{ _platform_names | map('extract', hostvars, '_libvirt_macaddr') }}"
+        _macaddr_list: "{{ _macaddr_data | map('nephelaiio.plugins.map_format', _macaddr_tpl) | map('ansible.builtin.from_json') }}"
+      when: libvirt_macaddr_facts | default(True) | bool
+
+    - name: Set partial platform facts
+      ansible.builtin.set_fact:
+        _libvirt_platforms: "{{ _libvirt_platform_data }}"
+      when: not (libvirt_macaddr_facts | default(True) | bool)
 
 - name: Configure guests
   hosts: localhost
@@ -15,142 +41,6 @@
       vars:
         _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
-
-    - name: Create libvirt path
-      ansible.builtin.file:
-        path: "{{ _libvirt_path }}"
-        state: directory
-        owner: "{{ _libvirt_daemon_user }}"
-        group: "{{ _libvirt_daemon_group }}"
-        mode: "u=rwx,g=rx,o=rx"
-      become: "{{ _libvirt_become | bool }}"
-
-    - name: Grant playbook user access to libvirt path
-      ansible.posix.acl:
-        path: "{{ _libvirt_path }}"
-        entity: "{{ ansible_env.USER }}"
-        etype: user
-        permissions: rwx
-        state: present
-      become: true
-      when: not (_libvirt_become | bool)
-
-    - name: Create libvirt tempdir
-      ansible.builtin.tempfile:
-        state: directory
-        prefix: libvirt
-      register: _libvirt_tmpdir
-      changed_when: false
-
-    - name: Manage libvirt pool and network
-      block:
-        - name: Query libvirt pools
-          ansible.builtin.command: "virsh -c qemu:///system pool-list --name --all"
-          register: _pools
-          become: "{{ _libvirt_become | bool }}"
-          changed_when: false
-
-        - name: Set pool facts
-          ansible.builtin.set_fact:
-            _libvirt_pool_list: "{{ _pools.stdout_lines | map('trim') | list }}"
-
-        - name: Destroy libvirt pool
-          when: _libvirt_pool in _libvirt_pool_list
-          block:
-            - name: Destroy libvirt pool
-              ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
-              ignore_errors: true
-              become: "{{ _libvirt_become | bool }}"
-              changed_when: true
-
-            - name: Undefine libvirt pool
-              ansible.builtin.command: "virsh -c qemu:///system pool-undefine {{ _libvirt_pool }}"
-              become: "{{ _libvirt_become | bool }}"
-              changed_when: true
-
-        - name: Create libvirt pool
-          block:
-            - name: Create libvirt pool template
-              ansible.builtin.template:
-                src: "pool.j2.xml"
-                dest: "{{ _libvirt_tmpdir.path }}/pool.j2.xml"
-                mode: "u=rw,g=r,o="
-              vars:
-                _pool_name: "{{ _libvirt_pool }}"
-                _pool_path: "{{ _libvirt_path }}"
-
-            - name: Define libvirt pool
-              ansible.builtin.command: "virsh -c qemu:///system pool-define {{ _libvirt_tmpdir.path }}/pool.j2.xml --validate"
-              become: "{{ _libvirt_become | bool }}"
-              changed_when: true
-
-            - name: Start libvirt pool
-              ansible.builtin.command: "virsh -c qemu:///system pool-start {{ _libvirt_pool }}"
-              become: "{{ _libvirt_become | bool }}"
-              changed_when: true
-
-        - name: Query libvirt networks
-          ansible.builtin.command: "virsh -c qemu:///system net-list --name --all"
-          register: _net_query
-          become: "{{ _libvirt_become | bool }}"
-          changed_when: false
-
-        - name: Query inactive libvirt networks
-          ansible.builtin.command: "virsh -c qemu:///system net-list --inactive --name"
-          register: _net_inactive_query
-          become: "{{ _libvirt_become | bool }}"
-          changed_when: false
-
-        - name: Set libvirt network facts
-          ansible.builtin.set_fact:
-            _libvirt_network_create: "{{ (_libvirt_network_custom | bool) and not (_libvirt_network_exists | bool) }}"
-            _libvirt_network_present: "{{ _libvirt_network_exists }}"
-            _libvirt_network_inactive: "{{ (_libvirt_network | trim) in _libvirt_network_inactive_list }}"
-          vars:
-            _libvirt_network_list: "{{ _net_query.stdout_lines | map('trim') | list }}"
-            _libvirt_network_exists: "{{ (_libvirt_network | trim) in _libvirt_network_list }}"
-            _libvirt_network_custom: "{{ _libvirt_network != 'default' }}"
-            _libvirt_network_inactive_list: "{{ _net_inactive_query.stdout_lines | map('trim') | list }}"
-
-        - name: Create libvirt network
-          when: _libvirt_network_create | bool
-          block:
-            - name: Create libvirt network template
-              ansible.builtin.template:
-                src: "network.j2.xml"
-                dest: "{{ _libvirt_tmpdir.path }}/network.j2.xml"
-                mode: "u=rw,g=r,o="
-              vars:
-                _net_name: "{{ _libvirt_network | trim }}"
-                _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
-                _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
-
-            - name: Debug libvirt network definition
-              ansible.builtin.debug:
-                msg: |
-                  {{ lookup('ansible.builtin.file', _libvirt_tmpdir.path + '/network.j2.xml') }}
-
-            - name: Add libvirt network
-              ansible.builtin.command: "virsh -c qemu:///system net-define {{ _libvirt_tmpdir.path }}/network.j2.xml --validate"
-              become: "{{ _libvirt_become | bool }}"
-              changed_when: _libvirt_network_create | bool
-
-            - name: Set libvirt network autostart
-              ansible.builtin.command: "virsh -c qemu:///system net-autostart {{ _libvirt_network }}"
-              become: "{{ _libvirt_become | bool }}"
-              changed_when: _libvirt_network_create | bool
-
-        - name: Start libvirt network
-          ansible.builtin.command: "virsh -c qemu:///system net-start {{ _libvirt_network }}"
-          become: "{{ _libvirt_become | bool }}"
-          when: (_libvirt_network_create | bool) or (_libvirt_network_inactive | bool)
-
-      always:
-        - name: Destroy libvirt tempdir
-          ansible.builtin.file:
-            dest: "{{ _libvirt_tmpdir.path }}"
-            state: absent
-          changed_when: false
 
     - name: List cached images
       ansible.builtin.find:
@@ -267,6 +157,7 @@
     - name: Set platform facts
       ansible.builtin.set_fact:
         guest_image: "{{ _platform.image | default('') }}"
+        guest_iso: "{{ _platform.iso | default('') }}"
         guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
         guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
         guest_disk_size: "{{ _platform.size | default('20G') }}"
@@ -277,7 +168,7 @@
         guest_privkey: "{{ _libvirt_privkey }}"
         guest_hostname: "{{ inventory_hostname }}"
         guest_disk_format: qcow2
-        guest_iso_path: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
+        guest_cloudinit: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
         guest_network: "{{ _libvirt_network }}"
         guest_mem: "{{ (_platform.mem | default(2)) * 1024 }}"
         guest_cpu: "{{ _platform.cpu | default(2) }}"
@@ -354,42 +245,61 @@
 
         - name: Create KVM guest
           block:
-            - name: Create cloud-init meta data
-              ansible.builtin.template:
-                src: "meta-data.yml.j2"
-                dest: "{{ libvirt_tmpdir.path }}/meta-data"
-                mode: "u=rw,g=r,o="
+            - name: Verify guest iso
+              when: guest_iso != ''
+              block:
+                - name: Stat guest iso
+                  ansible.builtin.stat:
+                    path: "{{ guest_iso }}"
 
-            - name: Create cloud-init user data
-              ansible.builtin.template:
-                src: "user-data.yml.j2"
-                dest: "{{ libvirt_tmpdir.path }}/user-data"
-                mode: "u=rw,g=r,o="
-
-            - name: Create cloud-init network data
-              ansible.builtin.template:
-                src: "network-config.yml.j2"
-                dest: "{{ libvirt_tmpdir.path }}/network-config"
-                mode: "u=rw,g=r,o="
-              when: not guest_dhcp
-
-            - name: Detect xorriso binary
-              ansible.builtin.command: "which xorriso"
-              register: _xorriso_query
-              changed_when: false
+                - name: Fail if guest iso does not exist
+                  ansible.builtin.fail:
+                    msg: "Guest ISO {{ guest_iso }} does not exist."
+                  when: not guest_iso.stat.exists
 
             - name: Create cloud-init iso
-              ansible.builtin.command:
-                cmd: |
-                  {{ _xorriso_query.stdout }} -as mkisofs
-                  -volid cidata -joliet -rock
-                  -o {{ _libvirt_path }}/{{ inventory_hostname }}.iso .
-                chdir: "{{ libvirt_tmpdir.path }}"
-              become: true
+              when: guest_iso == ''
+              block:
+                - name: Override guest_iso
+                  ansible.builtin.set_fact:
+                    guest_iso: "{{ guest_cloudinit }}"
 
-            - name: Manage cloud-init disk permissions
+                - name: Create cloud-init meta data
+                  ansible.builtin.template:
+                    src: "meta-data.yml.j2"
+                    dest: "{{ libvirt_tmpdir.path }}/meta-data"
+                    mode: "u=rw,g=r,o="
+
+                - name: Create cloud-init user data
+                  ansible.builtin.template:
+                    src: "user-data.yml.j2"
+                    dest: "{{ libvirt_tmpdir.path }}/user-data"
+                    mode: "u=rw,g=r,o="
+
+                - name: Create cloud-init network data
+                  ansible.builtin.template:
+                    src: "network-config.yml.j2"
+                    dest: "{{ libvirt_tmpdir.path }}/network-config"
+                    mode: "u=rw,g=r,o="
+                  when: not guest_dhcp
+
+                - name: Detect xorriso binary
+                  ansible.builtin.command: "which xorriso"
+                  register: _xorriso_query
+                  changed_when: false
+
+                - name: Create cloud-init iso
+                  ansible.builtin.command:
+                    cmd: |
+                      {{ _xorriso_query.stdout }} -as mkisofs
+                      -volid cidata -joliet -rock
+                      -o {{ guest_iso }} .
+                    chdir: "{{ libvirt_tmpdir.path }}"
+                  become: true
+
+            - name: Manage guest iso disk permissions
               ansible.builtin.file:
-                dest: "{{ _libvirt_path }}/{{ inventory_hostname }}.iso"
+                dest: "{{ guest_iso }}.iso"
                 state: file
                 owner: "{{ _libvirt_daemon_user }}"
                 group: "{{ _libvirt_daemon_group }}"

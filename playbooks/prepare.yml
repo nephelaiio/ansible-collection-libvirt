@@ -1,9 +1,10 @@
 ---
+- name: Load collection defaults
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+
 - name: Prepare KVM host
   hosts: localhost
-  become: true
-  vars:
-    ansible_connection: local
+  connection: local
   tasks:
     - name: Verify host distribution support
       ansible.builtin.assert:
@@ -19,6 +20,7 @@
 
     - name: Configure Debian libvirt daemon
       when: ansible_os_family == 'Debian'
+      become: true
       block:
         - name: Install deb package requirements
           ansible.builtin.apt:
@@ -54,6 +56,145 @@
             line: "user = '{{ _libvirt_daemon_user }}'"
           notify: debian_libvirt_restart
 
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Create libvirt path
+      ansible.builtin.file:
+        path: "{{ _libvirt_path }}"
+        state: directory
+        owner: "{{ _libvirt_daemon_user }}"
+        group: "{{ _libvirt_daemon_group }}"
+        mode: "u=rwx,g=rx,o=rx"
+      become: "{{ _libvirt_become | bool }}"
+
+    - name: Grant playbook user access to libvirt path
+      ansible.posix.acl:
+        path: "{{ _libvirt_path }}"
+        entity: "{{ ansible_env.USER }}"
+        etype: user
+        permissions: rwx
+        state: present
+      become: true
+      when: not (_libvirt_become | bool)
+
+    - name: Create libvirt tempdir
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: libvirt
+      register: _libvirt_tmpdir
+      changed_when: false
+
+    - name: Manage libvirt pool and network
+      block:
+        - name: Query libvirt pools
+          ansible.builtin.command: "virsh -c qemu:///system pool-list --name --all"
+          register: _pools
+          become: "{{ _libvirt_become | bool }}"
+          changed_when: false
+
+        - name: Set pool facts
+          ansible.builtin.set_fact:
+            _libvirt_pool_list: "{{ _pools.stdout_lines | map('trim') | list }}"
+
+        - name: Destroy libvirt pool
+          when: _libvirt_pool in _libvirt_pool_list
+          block:
+            - name: Destroy libvirt pool
+              ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
+              ignore_errors: true
+              become: "{{ _libvirt_become | bool }}"
+              changed_when: true
+
+            - name: Undefine libvirt pool
+              ansible.builtin.command: "virsh -c qemu:///system pool-undefine {{ _libvirt_pool }}"
+              become: "{{ _libvirt_become | bool }}"
+              changed_when: true
+
+        - name: Create libvirt pool
+          block:
+            - name: Create libvirt pool template
+              ansible.builtin.template:
+                src: "pool.j2.xml"
+                dest: "{{ _libvirt_tmpdir.path }}/pool.j2.xml"
+                mode: "u=rw,g=r,o="
+              vars:
+                _pool_name: "{{ _libvirt_pool }}"
+                _pool_path: "{{ _libvirt_path }}"
+
+            - name: Define libvirt pool
+              ansible.builtin.command: "virsh -c qemu:///system pool-define {{ _libvirt_tmpdir.path }}/pool.j2.xml --validate"
+              become: "{{ _libvirt_become | bool }}"
+              changed_when: true
+
+            - name: Start libvirt pool
+              ansible.builtin.command: "virsh -c qemu:///system pool-start {{ _libvirt_pool }}"
+              become: "{{ _libvirt_become | bool }}"
+              changed_when: true
+
+        - name: Query libvirt networks
+          ansible.builtin.command: "virsh -c qemu:///system net-list --name --all"
+          register: _net_query
+          become: "{{ _libvirt_become | bool }}"
+          changed_when: false
+
+        - name: Query inactive libvirt networks
+          ansible.builtin.command: "virsh -c qemu:///system net-list --inactive --name"
+          register: _net_inactive_query
+          become: "{{ _libvirt_become | bool }}"
+          changed_when: false
+
+        - name: Set libvirt network facts
+          ansible.builtin.set_fact:
+            _libvirt_network_create: "{{ (_libvirt_network_custom | bool) and not (_libvirt_network_exists | bool) }}"
+            _libvirt_network_present: "{{ _libvirt_network_exists }}"
+            _libvirt_network_inactive: "{{ (_libvirt_network | trim) in _libvirt_network_inactive_list }}"
+          vars:
+            _libvirt_network_list: "{{ _net_query.stdout_lines | map('trim') | list }}"
+            _libvirt_network_exists: "{{ (_libvirt_network | trim) in _libvirt_network_list }}"
+            _libvirt_network_custom: "{{ _libvirt_network != 'default' }}"
+            _libvirt_network_inactive_list: "{{ _net_inactive_query.stdout_lines | map('trim') | list }}"
+
+        - name: Create libvirt network
+          when: _libvirt_network_create | bool
+          block:
+            - name: Create libvirt network template
+              ansible.builtin.template:
+                src: "network.j2.xml"
+                dest: "{{ _libvirt_tmpdir.path }}/network.j2.xml"
+                mode: "u=rw,g=r,o="
+              vars:
+                _net_name: "{{ _libvirt_network | trim }}"
+                _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
+                _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
+
+            - name: Debug libvirt network definition
+              ansible.builtin.debug:
+                msg: |
+                  {{ lookup('ansible.builtin.file', _libvirt_tmpdir.path + '/network.j2.xml') }}
+
+            - name: Add libvirt network
+              ansible.builtin.command: "virsh -c qemu:///system net-define {{ _libvirt_tmpdir.path }}/network.j2.xml --validate"
+              become: "{{ _libvirt_become | bool }}"
+              changed_when: _libvirt_network_create | bool
+
+            - name: Set libvirt network autostart
+              ansible.builtin.command: "virsh -c qemu:///system net-autostart {{ _libvirt_network }}"
+              become: "{{ _libvirt_become | bool }}"
+              changed_when: _libvirt_network_create | bool
+
+        - name: Start libvirt network
+          ansible.builtin.command: "virsh -c qemu:///system net-start {{ _libvirt_network }}"
+          become: "{{ _libvirt_become | bool }}"
+          when: (_libvirt_network_create | bool) or (_libvirt_network_inactive | bool)
+
+      always:
+        - name: Destroy libvirt tempdir
+          ansible.builtin.file:
+            dest: "{{ _libvirt_tmpdir.path }}"
+            state: absent
+          changed_when: false
+
   handlers:
     - name: Restart libvirt daemon
       ansible.builtin.systemd:
@@ -61,3 +202,4 @@
         state: restarted
         enabled: true
       listen: debian_libvirt_restart
+      become: true
