@@ -40,7 +40,7 @@
     </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='{{ guest_iso_path }}' index='2'/>
+      <source file='{{ guest_iso }}' index='2'/>
       <backingStore/>
       <target dev='sda' bus='sata'/>
       <readonly/>

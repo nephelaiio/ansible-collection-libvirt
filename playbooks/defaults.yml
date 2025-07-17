@@ -12,13 +12,11 @@
         that:
           - libvirt_platforms is defined
           - libvirt_platforms | length > 0
-      when: libvirt_platforms_check | default(True) | bool
 
     - name: Set host facts
       ansible.builtin.set_fact:
         _libvirt_mac_prefix: "52:54:00"
         _libvirt_network: "{{ _network_name }}"
-        _libvirt_bridge: "{{ _network_name }}br0"
         _libvirt_address: "{{ _network_addr }}"
         _libvirt_prefix: "{{ _network_addr | ansible.utils.ipaddr('prefix') }}"
         _libvirt_daemon_user: "{{ _project_user }}"
@@ -66,4 +64,3 @@
         _index_list: "{{ _index_data | map('ansible.builtin.from_json') }}"
         _platform_ipaddrs: "{{ libvirt_platforms | zip(_ipaddr_list) | map('ansible.builtin.combine') }}"
         _platform_indices: "{{ _platform_ipaddrs | zip(_index_list) | map('ansible.builtin.combine') }}"
-      when: libvirt_platforms is defined
