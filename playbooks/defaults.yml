@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: true
 
-- name: Set collection defaults
+- name: Set collection facts
   hosts: "{{ libvirt_guests | default('all') }}:localhost"
   gather_facts: false
   tasks:
