@@ -1,4 +1,3 @@
-
 <domain type='kvm'>
   <name>{{ guest_hostname }}</name>
   <memory unit='MB'>{{ guest_mem }}</memory>
