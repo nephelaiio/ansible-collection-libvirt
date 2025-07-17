@@ -299,7 +299,7 @@
 
             - name: Manage guest iso disk permissions
               ansible.builtin.file:
-                dest: "{{ guest_iso }}.iso"
+                dest: "{{ guest_iso }}"
                 state: file
                 owner: "{{ _libvirt_daemon_user }}"
                 group: "{{ _libvirt_daemon_group }}"
