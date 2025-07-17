@@ -64,4 +64,3 @@
         _index_list: "{{ _index_data | map('ansible.builtin.from_json') }}"
         _platform_ipaddrs: "{{ libvirt_platforms | zip(_ipaddr_list) | map('ansible.builtin.combine') }}"
         _platform_indices: "{{ _platform_ipaddrs | zip(_index_list) | map('ansible.builtin.combine') }}"
-      when: libvirt_platforms is defined

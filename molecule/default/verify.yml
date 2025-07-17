@@ -1,6 +1,6 @@
 ---
 - name: Set host facts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Verify KVM guests
   hosts: all:!molecule_pxe

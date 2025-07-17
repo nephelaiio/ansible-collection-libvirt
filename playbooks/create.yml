@@ -1,6 +1,6 @@
 ---
 - name: Set host facts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Set platform facts
   hosts: "{{ libvirt_guests | default('all') }}:localhost"
@@ -24,12 +24,6 @@
         _platform_names: "{{ _libvirt_platform_data | map(attribute='name') }}"
         _macaddr_data: "{{ _platform_names | map('extract', hostvars, '_libvirt_macaddr') }}"
         _macaddr_list: "{{ _macaddr_data | map('nephelaiio.plugins.map_format', _macaddr_tpl) | map('ansible.builtin.from_json') }}"
-      when: libvirt_macaddr_facts | default(True) | bool
-
-    - name: Set partial platform facts
-      ansible.builtin.set_fact:
-        _libvirt_platforms: "{{ _libvirt_platform_data }}"
-      when: not (libvirt_macaddr_facts | default(True) | bool)
 
 - name: Configure guests
   hosts: localhost
@@ -260,10 +254,6 @@
             - name: Create cloud-init iso
               when: guest_iso == ''
               block:
-                - name: Override guest_iso
-                  ansible.builtin.set_fact:
-                    guest_iso: "{{ guest_cloudinit }}"
-
                 - name: Create cloud-init meta data
                   ansible.builtin.template:
                     src: "meta-data.yml.j2"
@@ -293,9 +283,13 @@
                     cmd: |
                       {{ _xorriso_query.stdout }} -as mkisofs
                       -volid cidata -joliet -rock
-                      -o {{ guest_iso }} .
+                      -o {{ guest_cloudinit }} .
                     chdir: "{{ libvirt_tmpdir.path }}"
                   become: true
+
+                - name: Override guest_iso
+                  ansible.builtin.set_fact:
+                    guest_iso: "{{ guest_cloudinit }}"
 
             - name: Manage guest iso disk permissions
               ansible.builtin.file:

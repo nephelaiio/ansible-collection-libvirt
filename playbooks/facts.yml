@@ -1,3 +1,0 @@
----
-- name: Load collection defaults
-  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults

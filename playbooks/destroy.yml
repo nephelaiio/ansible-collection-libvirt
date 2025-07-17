@@ -1,6 +1,6 @@
 ---
 - name: Set host facts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
   vars:
     libvirt_macaddr_facts: false
 
@@ -25,10 +25,15 @@
       become: "{{ _libvirt_become | bool }}"
       changed_when: false
 
+    - name: Set platform facts
+      ansible.builtin.set_fact:
+        _libvirt_platforms: "{{ _libvirt_platform_data }}"
+
     - name: Set KVM guest facts for active guests
       ansible.builtin.set_fact:
         _libvirt_guest_list_active: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
       vars:
+        _libvirt_platforms:
         _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
 
     - name: Stop KVM guests
