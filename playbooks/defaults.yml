@@ -50,7 +50,6 @@
     - name: Set guest facts
       ansible.builtin.set_fact:
         _libvirt_platform_data: "{{ _platform_indices }}"
-        _libvirt_ipaddrs: "{{ _ipaddr_data | map('ansible.builtin.from_json') }}"
       vars:
         _tpl_index: '{ "index": "%s" }'
         _tpl_ipaddr: '{ "ipaddr": "%s" }'
@@ -65,6 +64,6 @@
         _ipaddr_list: "{{ _ipaddr_data | map('ansible.builtin.from_json') }}"
         _index_data: "{{ range(libvirt_platforms | length) | map('nephelaiio.plugins.map_format', _tpl_index) }}"
         _index_list: "{{ _index_data | map('ansible.builtin.from_json') }}"
-        _platform_ipaddrs: "{{ libvirt_platforms | zip(_libvirt_ipaddrs) | map('ansible.builtin.combine') }}"
+        _platform_ipaddrs: "{{ libvirt_platforms | zip(_ipaddr_list) | map('ansible.builtin.combine') }}"
         _platform_indices: "{{ _platform_ipaddrs | zip(_index_list) | map('ansible.builtin.combine') }}"
       when: libvirt_platforms is defined
