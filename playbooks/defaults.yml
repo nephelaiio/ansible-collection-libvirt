@@ -14,7 +14,7 @@
           - libvirt_platforms | length > 0
       when: libvirt_platforms_check | default(True) | bool
 
-    - name: Set guest facts
+    - name: Set host facts
       ansible.builtin.set_fact:
         _libvirt_network: "{{ _network_name }}"
         _libvirt_bridge: "{{ _network_name }}br0"
@@ -52,6 +52,7 @@
         _libvirt_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
         _libvirt_mac_prefix: "52:54:00"
       vars:
+        _tpl_ipaddr: '{ "ipaddr": "%s" }'
         _iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
         _iface_network: "{{ _libvirt_address | ansible.utils.ipaddr('network') }}"
         _iface_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
@@ -67,7 +68,6 @@
         _libvirt_platform_data: "{{ _platform_indices }}"
       vars:
         _tpl_index: '{ "index": "%s" }'
-        _tpl_ipaddr: '{ "ipaddr": "%s" }'
         _index_data: "{{ range(libvirt_platforms | length) | map('nephelaiio.plugins.map_format', _tpl_index) }}"
         _index_list: "{{ _index_data | map('ansible.builtin.from_json') }}"
         _platform_ipaddrs: "{{ libvirt_platforms | zip(_libvirt_ipaddrs) | map('ansible.builtin.combine') }}"
