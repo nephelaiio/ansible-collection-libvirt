@@ -33,7 +33,7 @@
         permissions: rwx
         state: present
       become: true
-      when: "{{ not (_libvirt_become | bool) }}"
+      when: not (_libvirt_become | bool)
 
     - name: Create libvirt tempdir
       ansible.builtin.tempfile:
