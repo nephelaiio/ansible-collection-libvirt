@@ -46,14 +46,12 @@ jobs:
       - name: Build test scenario
         run: devbox run -- make ${{ matrix.os }}
         env:
-          CI: true
           MOLECULE_LOGDIR: "/tmp/logs"
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
 
       - name: Run verification tests
         run: devbox run -- make verify
         env:
-          CI: true
           MOLECULE_LOGDIR: "/tmp/logs"
           MOLECULE_SCENARIO: ${{ matrix.scenario }}
 
