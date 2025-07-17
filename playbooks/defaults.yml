@@ -14,9 +14,8 @@
           - libvirt_platforms | length > 0
       when: libvirt_platforms_check | default(True) | bool
 
-    - name: Set guest defaults
+    - name: Set guest facts
       ansible.builtin.set_fact:
-        # Overridable values
         _libvirt_network: "{{ _network_name }}"
         _libvirt_bridge: "{{ _network_name }}br0"
         _libvirt_address: "{{ _network_addr }}"
@@ -33,6 +32,7 @@
         _libvirt_privkey: "{{ _path_pool }}/id_rsa"
         _libvirt_inventory_path: "{{ _project_temp }}/inventory"
         _libvirt_become: "{{ lookup('ansible.builtin.env', 'CI') | default('false') | bool }}"
+        _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
       vars:
         _ansible_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
         _project_user: "{{ lookup('ansible.builtin.env', 'USER') }}"
@@ -45,12 +45,11 @@
         _path_pool: "{{ _project_path }}/libvirt/{{ _project_name }}"
         _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_pool + '/logs') }}"
 
-    - name: Set host defaults
+    - name: Set networking facts
       ansible.builtin.set_fact:
-        # Derived values
+        _libvirt_netaddr: "{{ _iface_network }}/{{ _iface_prefix }}"
+        _libvirt_ipaddrs: "{{ _ipaddr_data | map('ansible.builtin.from_json') }}"
         _libvirt_prefix: "{{ _libvirt_address | ansible.utils.ipaddr('prefix') }}"
-        _libvirt_platform_data: "{{ _platform_indices }}"
-        _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
         _libvirt_mac_prefix: "52:54:00"
       vars:
         _iface_host: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
@@ -62,10 +61,15 @@
         _network_usable: "{{ _network_free | community.general.version_sort }}"
         _ipaddr_data: "{{ _network_usable[0 : libvirt_platforms | length] | map('nephelaiio.plugins.map_format', _tpl_ipaddr) }}"
         _ipaddr_list: "{{ _ipaddr_data | map('ansible.builtin.from_json') }}"
+
+    - name: Set guest facts
+      ansible.builtin.set_fact:
+        _libvirt_platform_data: "{{ _platform_indices }}"
+      vars:
         _tpl_index: '{ "index": "%s" }'
         _tpl_ipaddr: '{ "ipaddr": "%s" }'
         _index_data: "{{ range(libvirt_platforms | length) | map('nephelaiio.plugins.map_format', _tpl_index) }}"
         _index_list: "{{ _index_data | map('ansible.builtin.from_json') }}"
-        _platform_ipaddrs: "{{ libvirt_platforms | zip(_ipaddr_list) | map('ansible.builtin.combine') }}"
+        _platform_ipaddrs: "{{ libvirt_platforms | zip(_libvirt_ipaddrs) | map('ansible.builtin.combine') }}"
         _platform_indices: "{{ _platform_ipaddrs | zip(_index_list) | map('ansible.builtin.combine') }}"
-      when: _libvirt_platforms is defined
+      when: libvirt_platforms is defined
