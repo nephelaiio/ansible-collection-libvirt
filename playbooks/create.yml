@@ -3,27 +3,7 @@
   ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Set platform facts
-  hosts: "{{ libvirt_guests | default('all') }}:localhost"
-  gather_facts: false
-  tasks:
-    - name: Set mac address facts
-      ansible.builtin.set_fact:
-        _libvirt_macaddr: "{{ _libvirt_mac_prefix | community.general.random_mac(seed=inventory_hostname) }}"
-
-    - name: Set image facts
-      ansible.builtin.set_fact:
-        _libvirt_image: "{{ _libvirt_instance_data.image | default('') }}"
-      vars:
-        _libvirt_instance_data: "{{ libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
-
-    - name: Set full platform facts
-      ansible.builtin.set_fact:
-        _libvirt_platforms: "{{ _libvirt_platform_data | zip(_macaddr_list) | map('ansible.builtin.combine') }}"
-      vars:
-        _macaddr_tpl: '{ "macaddr": "%s" }'
-        _platform_names: "{{ _libvirt_platform_data | map(attribute='name') }}"
-        _macaddr_data: "{{ _platform_names | map('extract', hostvars, '_libvirt_macaddr') }}"
-        _macaddr_list: "{{ _macaddr_data | map('nephelaiio.plugins.map_format', _macaddr_tpl) | map('ansible.builtin.from_json') }}"
+  ansible.builtin.import_playbook: nephelaiio.libvirt.platform
 
 - name: Configure guests
   hosts: localhost

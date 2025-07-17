@@ -2,6 +2,9 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
+- name: Set platform facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.platform
+
 - name: Verify KVM guests
   hosts: all:!molecule_pxe
   gather_facts: false
@@ -11,6 +14,7 @@
         - name: Filter platform facts
           ansible.builtin.set_fact:
             _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) }}"
+          vars:
 
         - name: Check platform
           ansible.builtin.assert:
