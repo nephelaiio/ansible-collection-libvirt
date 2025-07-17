@@ -53,7 +53,6 @@
             regexp: "^#?user ="
             line: "user = '{{ _libvirt_daemon_user }}'"
           notify: debian_libvirt_restart
-          become: true
 
   handlers:
     - name: Restart libvirt daemon
@@ -62,4 +61,3 @@
         state: restarted
         enabled: true
       listen: debian_libvirt_restart
-      become: true
