@@ -29,7 +29,7 @@
         _libvirt_logdir: "{{ _path_log }}"
         _libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('90') }}"
         _libvirt_resolvers: "{{ [libvirt_resolvers | default(['1.1.1.1', '8.8.8.8'])] | flatten }}"
-        _libvirt_privkey: "{{ _path_pool }}/id_rsa"
+        _libvirt_privkey: "{{ libvirt_privkey | default(_ssh_privkey) }}"
         _libvirt_inventory_path: "{{ _project_temp }}/inventory"
         _libvirt_become: "{{ lookup('ansible.builtin.env', 'CI') | default('false') | bool }}"
         _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
@@ -44,6 +44,7 @@
         _network_addr: "{{ libvirt_address | default('172.31.252.1/24') }}"
         _path_pool: "{{ _project_path }}/libvirt/{{ _project_name }}"
         _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_pool + '/logs') }}"
+        _ssh_privkey: "{{ _path_pool }}/id_rsa"
 
     - name: Set guest facts
       ansible.builtin.set_fact:

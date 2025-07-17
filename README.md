@@ -15,17 +15,18 @@ An [ansible collection](https://galaxy.ansible.com/ui/repo/published/nephelaiio/
 
 The following is the list of parameters intended for end-user manipulation:
 
-| Parameter            |                                  Default | Description                    | Required |
-| :------------------- | ---------------------------------------: | :----------------------------- | :------- |
-| libvirt_platforms    |                      [<platform_object>] | Libvirt guest list             | true     |
-| libvirt_address      |                        '172.31.252.1/24' | Libvirt host address           | false    |
-| libvirt_network      |                               'molecule' | Libvirt network name           | false    |
-| libvirt_resolvers    |                   ['1.1.1.1', '8.8.8.8'] | Libvirt network resolvers      | false    |
-| libvirt_user         |                               'molecule' | OS user for guest access       | false    |
-| libvirt_pass         |                               'molecule' | OS password for guest access   | false    |
-| libvirt_pool         |                  '{{ libvirt_network }}' | Libvirt storage pool name      | false    |
-| libvirt_path         | '/var/lib/libvirt/{{ libvirt_network }}' | Libvirt storage pool directory | false    |
-| libvirt_conn_timeout |                                     '30' | Libvirt guest conn timeout     | false    |
+| Parameter            |                           Default | Description                      | Required |
+| :------------------- | --------------------------------: | :------------------------------- | :------- |
+| libvirt_platforms    |               [<platform_object>] | Libvirt guest list               | true     |
+| libvirt_privkey      |       "{{ libvirt_path }}/id_rsa" | Libvirt guest private key        | true     |
+| libvirt_address      |                 '172.31.252.1/24' | Libvirt host address             | false    |
+| libvirt_network      |                <project basename> | Libvirt network name             | false    |
+| libvirt_resolvers    |            ['1.1.1.1', '8.8.8.8'] | Libvirt network resolvers        | false    |
+| libvirt_user         |                        'molecule' | OS user for guest access         | false    |
+| libvirt_pass         |                        'molecule' | OS password for guest access     | false    |
+| libvirt_pool         |           '{{ libvirt_network }}' | Libvirt storage pool name        | false    |
+| libvirt_path         | './libvirt/{{ libvirt_network }}' | Libvirt storage pool directory   | false    |
+| libvirt_conn_timeout |                              '30' | Libvirt guest connection timeout | false    |
 
 The following environment variables are also supported
 
