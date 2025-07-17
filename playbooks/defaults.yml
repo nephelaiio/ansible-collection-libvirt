@@ -18,7 +18,6 @@
       ansible.builtin.set_fact:
         _libvirt_mac_prefix: "52:54:00"
         _libvirt_network: "{{ _network_name }}"
-        _libvirt_bridge: "{{ _network_name }}br0"
         _libvirt_address: "{{ _network_addr }}"
         _libvirt_prefix: "{{ _network_addr | ansible.utils.ipaddr('prefix') }}"
         _libvirt_daemon_user: "{{ _project_user }}"

@@ -124,7 +124,6 @@
                 _net_name: "{{ _libvirt_network | trim }}"
                 _net_address: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
                 _net_mask: "{{ _libvirt_address | ansible.utils.ipaddr('netmask') }}"
-                _net_bridge: "{{ _libvirt_bridge }}"
 
             - name: Debug libvirt network definition
               ansible.builtin.debug:
