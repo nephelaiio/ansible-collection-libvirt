@@ -102,8 +102,8 @@
           block:
             - name: Destroy libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
-              ignore_errors: true
               become: "{{ _libvirt_become | bool }}"
+              failed_when: false
               changed_when: true
 
             - name: Undefine libvirt pool
@@ -187,6 +187,7 @@
           ansible.builtin.command: "virsh -c qemu:///system net-start {{ _libvirt_network }}"
           become: "{{ _libvirt_become | bool }}"
           when: (_libvirt_network_create | bool) or (_libvirt_network_inactive | bool)
+          changed_when: true
 
       always:
         - name: Destroy libvirt tempdir
