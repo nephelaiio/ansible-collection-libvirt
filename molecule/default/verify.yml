@@ -63,7 +63,7 @@
                 path: "{{ _libvirt_logdir }}"
                 state: directory
                 owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
-                mode: 0750
+                mode: "u=rwx,g=rx,o="
               run_once: true
 
             - name: Load NBD module
@@ -76,7 +76,7 @@
                 path: "{{ _guest_nbddir }}"
                 state: directory
                 owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
-                mode: 0755
+                mode: "u=rwx,go=rx"
 
             - name: Disconnect disk image from NBD device
               ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
@@ -167,7 +167,7 @@
                 src: "{{ log_src }}"
                 dest: "{{ log_dest }}"
                 remote_src: true
-                mode: 0666
+                mode: "uog=rw"
               vars:
                 log_src: "{{ _guest_nbddir }}/{{ item }}"
                 log_dest: "{{ _libvirt_logdir }}/{{ _guest_name }}.{{ item | basename }}"

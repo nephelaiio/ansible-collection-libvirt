@@ -108,11 +108,6 @@
               ansible.builtin.command: "virsh -c qemu:///system net-undefine {{ _libvirt_network }}"
               become: "{{ _libvirt_become | bool }}"
 
-            - name: Destroy bridge interface
-              ansible.builtin.command: "ip link delete {{ _libvirt_bridge }}"
-              when: _libvirt_bridge in ansible_facts['interfaces']
-              become: true
-
         - name: Delete host file entries
           ansible.builtin.lineinfile:
             path: /etc/hosts

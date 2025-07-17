@@ -23,7 +23,7 @@
         owner: "{{ _libvirt_daemon_user }}"
         group: "{{ _libvirt_daemon_group }}"
         mode: "u=rwx,g=rx,o=rx"
-      become: true
+      become: "{{ _libvirt_become | bool }}"
 
     - name: Grant playbook user access to libvirt path
       ansible.posix.acl:
@@ -33,6 +33,7 @@
         permissions: rwx
         state: present
       become: true
+      when: not (_libvirt_become | bool)
 
     - name: Create libvirt tempdir
       ansible.builtin.tempfile:
@@ -476,7 +477,7 @@
           ansible.builtin.copy:
             content: "{{ _platform_molecule | ansible.builtin.to_nice_yaml(indent=2) }}"
             dest: "{{ molecule_instance_config }}"
-            mode: 0640
+            mode: "u=rw,g=r,o="
 
         - name: Configure host file entries
           ansible.builtin.lineinfile:
