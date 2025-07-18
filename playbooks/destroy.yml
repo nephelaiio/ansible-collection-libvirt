@@ -1,8 +1,6 @@
 ---
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
-  vars:
-    libvirt_macaddr_facts: false
 
 - name: Prepare guest nodes
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
@@ -25,15 +23,10 @@
       become: "{{ _libvirt_become | bool }}"
       changed_when: false
 
-    - name: Set platform facts
+    - name: List active KVM guests
       ansible.builtin.set_fact:
-        _libvirt_platforms: "{{ _libvirt_platform_data }}"
-
-    - name: Set KVM guest facts for active guests
-      ansible.builtin.set_fact:
-        _libvirt_guest_list_active: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
+        _libvirt_guest_list_active: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
       vars:
-        _libvirt_platforms:
         _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
 
     - name: Stop KVM guests
@@ -47,13 +40,13 @@
       become: "{{ _libvirt_become | bool }}"
       changed_when: false
 
-    - name: Set KVM guest facts for all guests
+    - name: List all KVM guests
       ansible.builtin.set_fact:
-        _libvirt_guest_list_all: "{{ _libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names_all) }}"
+        _libvirt_guest_list_all: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names_all) }}"
       vars:
         _libvirt_guest_names_all: "{{ _libvirt_guest_query_all.stdout_lines | map('trim') | list }}"
 
-    - name: Undefine KVM guests
+    - name: Undefine inactive KVM guests
       ansible.builtin.command: "virsh -c qemu:///system undefine {{ item }}"
       become: "{{ _libvirt_become | bool }}"
       loop: "{{ _libvirt_guest_list_all }}"
@@ -62,7 +55,7 @@
       ansible.builtin.set_fact:
         _libvirt_image_paths: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
       vars:
-        _basenames: "{{ _libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
+        _basenames: "{{ libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
 
     - name: Debug disk location facts
       ansible.builtin.debug:
@@ -118,7 +111,7 @@
             path: /etc/hosts
             regexp: ".*{{ item }}.*"
             state: absent
-          loop: "{{ _libvirt_platforms | map(attribute='name') }}"
+          loop: "{{ libvirt_platforms | map(attribute='name') }}"
           become: true
 
         - name: Query libvirt pools

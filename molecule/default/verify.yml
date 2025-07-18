@@ -2,9 +2,6 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
-- name: Set platform facts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.platform
-
 - name: Verify KVM guests
   hosts: all:!molecule_pxe
   gather_facts: false
@@ -13,26 +10,24 @@
       block:
         - name: Filter platform facts
           ansible.builtin.set_fact:
-            _platform: "{{ _libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) }}"
+            _guest_data: "{{ _platform_data }}"
+            _guest_index: "{{ _platform_index }}"
           vars:
-
-        - name: Check platform
-          ansible.builtin.assert:
-            that: _platform | length == 1
+          _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
+          _platform_index: "{{ lookup('ansible.utils.index_of', _platform_names, 'eq', inventory_hostname) }}"
+          _platform_data: "{{ libvirt_platforms[_platform_index] }) }}"
 
         - name: Set platform facts
           ansible.builtin.set_fact:
-            _guest_image: "{{ _guest.image }}"
-            _guest_name: "{{ _guest.name }}"
-            _guest_cpu: "{{ _guest.cpu | default(2) }}"
-            _guest_mem: "{{ _guest.mem | default(2) }}"
-            _guest_index: "{{ _guest.index }}"
-            _guest_disk: "{{ _libvirt_path }}/{{ _guest.name }}.img"
-            _guest_nbddisk: "{{ _libvirt_guest_dir }}/{{ _guest.name }}.raw"
-            _guest_nbddev: "/dev/nbd{{ _guest.index }}"
-            _guest_nbddir: "{{ _libvirt_guest_dir }}/{{ _guest.name }}"
-          vars:
-            _guest: "{{ _platform | first }}"
+            _guest_image: "{{ _guest_data.image | default('') }}"
+            _guest_name: "{{ _guest_data.name }}"
+            _guest_cpu: "{{ _guest_data.cpu | default(2) }}"
+            _guest_mem: "{{ _guest_data.mem | default(2) }}"
+            _guest_index: "{{ _guest_index }}"
+            _guest_disk: "{{ _libvirt_path }}/{{ _guest_data.name }}.img"
+            _guest_nbddisk: "{{ _libvirt_guest_dir }}/{{ _guest_data.name }}.raw"
+            _guest_nbddev: "/dev/nbd{{ _guest_data.index }}"
+            _guest_nbddir: "{{ _libvirt_guest_dir }}/{{ _guest_data.name }}"
 
         - name: Gather facts
           ansible.builtin.setup:
