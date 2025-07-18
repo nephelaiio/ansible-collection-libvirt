@@ -102,17 +102,11 @@
   tasks:
     - name: Create guest SSH key
       block:
-        - name: Stat SSH key pair
-          ansible.builtin.stat:
-            path: "{{ _libvirt_privkey }}"
-          register: _libvirt_privkey_query
-
         - name: Create SSH key
           community.crypto.openssh_keypair:
             path: "{{ _libvirt_privkey }}"
-          run_once: true
+            creates: "{{ _libvirt_privkey }}"
           register: _pubkey
-          when: not _libvirt_privkey_query.stat.exists
 
         - name: Slurp SSH public key
           ansible.builtin.slurp:
