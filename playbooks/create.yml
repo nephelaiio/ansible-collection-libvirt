@@ -108,8 +108,6 @@
     - name: Create SSH key
       community.crypto.openssh_keypair:
         path: "{{ _libvirt_privkey }}"
-        creates: "{{ _libvirt_privkey }}"
-      run_once: true
       register: _pubkey
       when: not _libvirt_privkey_query.stat.exists
 
