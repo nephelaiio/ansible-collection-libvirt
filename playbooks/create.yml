@@ -100,28 +100,25 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Create guest SSH key
-      block:
-        - name: Stat SSH key pair
-          ansible.builtin.stat:
-            path: "{{ _libvirt_privkey }}"
-          register: _libvirt_privkey_query
+    - name: Stat SSH key pair
+      ansible.builtin.stat:
+        path: "{{ _libvirt_privkey }}"
+      register: _libvirt_privkey_query
 
-        - name: Create SSH key
-          community.crypto.openssh_keypair:
-            path: "{{ _libvirt_privkey }}"
-          run_once: true
-          register: _pubkey
-          when: not _libvirt_privkey_query.stat.exists
+    - name: Create SSH key
+      community.crypto.openssh_keypair:
+        path: "{{ _libvirt_privkey }}"
+      register: _pubkey
+      when: not _libvirt_privkey_query.stat.exists
 
-        - name: Slurp SSH public key
-          ansible.builtin.slurp:
-            src: "{{ _libvirt_privkey }}.pub"
-          register: _libvirt_pubkey_query
+    - name: Slurp SSH public key
+      ansible.builtin.slurp:
+        src: "{{ _libvirt_privkey }}.pub"
+      register: _libvirt_pubkey_query
 
-        - name: Set SSH public key fact
-          ansible.builtin.set_fact:
-            _libvirt_pubkey: "{{ _libvirt_pubkey_query.content | b64decode | trim }}"
+    - name: Set SSH public key fact
+      ansible.builtin.set_fact:
+        _libvirt_pubkey: "{{ _libvirt_pubkey_query.content | b64decode | trim }}"
 
 - name: Create KVM guests
   hosts: "{{ libvirt_guests | default('all') }}"
