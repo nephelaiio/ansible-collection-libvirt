@@ -308,6 +308,10 @@
                 dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
                 mode: "u=rw,g=r,o="
 
+            - name: Debug KVM guest XML template
+              ansible.builtin.debug:
+                msg: "{{ lookup('ansible.builtin.file', libvirt_tmpdir.path + '/vm.j2.xml') }}"
+
             - name: Create KVM guest
               ansible.builtin.command: "virsh -c qemu:///system create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
               become: "{{ _libvirt_become | bool }}"
