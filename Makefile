@@ -108,6 +108,8 @@ ifeq (login,$(firstword $(MAKECMDGOALS)))
 endif
 
 dependency create prepare converge idempotence side-effect verify destroy reset list purge login:
+	rm -rf ansible_collections
+	rm -rf ${HOME}/.ansible/collections/ansible_collections/$(COLLECTION_NAMESPACE)/$(COLLECTION_NAME)
 	ANSIBLE_VERBOSITY=${ANSIBLE_VERBOSITY} \
 	MOLECULE_DEBUG=${MOLECULE_DEBUG} \
 	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \

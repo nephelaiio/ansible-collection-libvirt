@@ -102,12 +102,12 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Stat SSH private pair
+    - name: Stat SSH private key file
       ansible.builtin.stat:
         path: "{{ _libvirt_privkey }}"
       register: _libvirt_privkey_query
 
-    - name: Stat SSH private pair
+    - name: Stat SSH public key file
       ansible.builtin.stat:
         path: "{{ _libvirt_privkey }}.pub"
       register: _libvirt_pubkey_query
@@ -145,6 +145,7 @@
         guest_disk_size: "{{ _platform.size | default('20G') }}"
         guest_gateway: "{{ _libvirt_address | ansible.utils.ipaddr('address') }}"
         guest_user: "{{ _libvirt_guest_user }}"
+        guest_pass: "{{ _libvirt_pass | ansible.builtin.password_hash('sha512') }}"
         guest_pubkey: "{{ _libvirt_pubkey }}"
         guest_privkey: "{{ _libvirt_privkey }}"
         guest_hostname: "{{ inventory_hostname }}"
