@@ -49,7 +49,7 @@ focal ubuntu2004:
 	make ubuntu UBUNTU_RELEASE=focal MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 debian:
-	make create prepare \
+	make create prepare converge \
 		MOLECULE_KVM_IMAGE=${DEBIAN_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -57,7 +57,7 @@ bookworm debian12:
 	make debian MOLECULE_SCENARIO=${MOLECULE_SCENARIO} DEBIAN_RELEASE=bookworm
 
 alma:
-	make create prepare \
+	make create prepare converge \
 		MOLECULE_KVM_IMAGE=${ALMA_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -65,7 +65,7 @@ alma9:
 	make alma EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 rocky:
-	make create prepare \
+	make create prepare converge \
 		MOLECULE_KVM_IMAGE=${ROCKY_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -73,7 +73,6 @@ rocky9:
 	make rocky EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 test: lint
-	rm -rf ansible_collections
 	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
 	uv run molecule $@ -s ${MOLECULE_SCENARIO}
@@ -95,10 +94,6 @@ requirements: install
 			--roles-path ${ROLE_DIR} \
 			--role-file ${ROLE_FILE}; \
 	fi
-	@ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
-	uv run ansible-galaxy collection install \
-		--force-with-deps .
-	@\find ./ -name "*.ymle*" -delete
 
 build: requirements
 	@uv run ansible-galaxy collection build --force
@@ -114,6 +109,7 @@ endif
 
 dependency create prepare converge idempotence side-effect verify destroy reset list purge login:
 	rm -rf ansible_collections
+	rm -rf ${HOME}/.ansible/collections/ansible_collections/$(COLLECTION_NAMESPACE)/$(COLLECTION_NAME)
 	ANSIBLE_VERBOSITY=${ANSIBLE_VERBOSITY} \
 	MOLECULE_DEBUG=${MOLECULE_DEBUG} \
 	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
@@ -125,7 +121,6 @@ ignore:
 	@uv run ansible-lint --generate-ignore
 
 clean: destroy reset
-	rm -rf ansible_collections
 	rm -rf libvirt
 	@uv env remove $$(which python) >/dev/null 2>&1 || exit 0
 

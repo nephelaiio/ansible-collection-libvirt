@@ -9,11 +9,12 @@
     "xfsprogs@latest",
     "gnumake@latest",
     "yq@latest",
-    "uv@latest"
+    "uv@latest",
+    "virt-viewer@latest"
   ],
   "env": {},
   "shell": {
     "init_hook": [". .venv/bin/activate"],
-    "scripts": {}
+    "scripts":   {}
   }
 }

@@ -478,6 +478,54 @@
         }
       }
     },
+    "virt-viewer@latest": {
+      "last_modified": "2025-07-15T16:15:05Z",
+      "resolved": "github:NixOS/nixpkgs/dab3a6e781554f965bde3def0aa2fda4eb8f1708#virt-viewer",
+      "source": "devbox-search",
+      "version": "11.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ih7dlpmqwibqafaz5v263m2k7qlvjhm8-virt-viewer-11.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ih7dlpmqwibqafaz5v263m2k7qlvjhm8-virt-viewer-11.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/gck92429h1aawh0i6dyd4ivw4zgjfpdi-virt-viewer-11.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/gck92429h1aawh0i6dyd4ivw4zgjfpdi-virt-viewer-11.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/g9b1zn70lrnl83xkyhjyn65l7zrjpqbc-virt-viewer-11.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/g9b1zn70lrnl83xkyhjyn65l7zrjpqbc-virt-viewer-11.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xmwyj10z25nm5qap2py7zlgzh94wp2vh-virt-viewer-11.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xmwyj10z25nm5qap2py7zlgzh94wp2vh-virt-viewer-11.0"
+        }
+      }
+    },
     "xfsprogs@latest": {
       "last_modified": "2025-02-09T21:53:45Z",
       "resolved": "github:NixOS/nixpkgs/b2243f41e860ac85c0b446eadc6930359b294e79#xfsprogs",
