@@ -62,40 +62,18 @@
       ansible.builtin.debug:
         var: _libvirt_inventory_path
 
-    - name: Create hostvars directory
-      ansible.builtin.file:
-        dest: "{{ _libvirt_inventory_path }}/host_vars"
-        state: directory
-        mode: "u=rwx,g=rx,o=rx"
-
-    - name: Create localhost hostvars
+    - name: Create molecule inventory configuration
       ansible.builtin.copy:
-        dest: "{{ _libvirt_inventory_path }}/host_vars/localhost.yml"
+        dest: "{{ _libvirt_inventory_path }}/libvirt.yml"
         content: |
           ---
-          ansible_connection: local
-          ansible_python_interpreter: python
-        mode: "u=rw,g=r,o="
-
-    - name: Create groupvars directory
-      ansible.builtin.file:
-        dest: "{{ _libvirt_inventory_path }}/group_vars"
-        state: directory
-        mode: "u=rwx,g=rx,o=rx"
-
-    - name: Create all groupvars directory
-      ansible.builtin.file:
-        dest: "{{ _libvirt_inventory_path }}/group_vars/all"
-        state: directory
-        mode: "u=rwx,g=rx,o=rx"
-
-    - name: Create molecule groupvars configuration
-      ansible.builtin.copy:
-        dest: "{{ _libvirt_inventory_path }}/group_vars/all/molecule.yml"
-        content: |
-          ---
-          ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          ansible_ssh_private_key_file: "{{ _libvirt_privkey }}"
+          all:
+            vars:
+              ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+              ansible_ssh_private_key_file: "{{ _libvirt_privkey }}"
+            localhost:
+              ansible_connection: local
+              ansible_python_interpreter: python
         mode: "u=rw,g=r,o="
 
 - name: Create SSH keys
