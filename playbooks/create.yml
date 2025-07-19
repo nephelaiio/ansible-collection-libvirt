@@ -167,7 +167,7 @@
         guest_cpu: "{{ _platform.cpu | default(2) }}"
         guest_macaddr: "{{ _libvirt_mac_prefix | community.general.random_mac(seed=inventory_hostname) }}"
         guest_resolvers: "{{ _platform.dns | default(_libvirt_resolvers) }}"
-        guest_ipaddr: "{{ _platform.ipaddr | default(_guest_address) }}"
+        guest_ipaddr: "{{ libvirt_guest_address | default(_platform.ipaddr) | default(_guest_address) }}"
       vars:
         _guest_address: "{{ _guest_ipaddr }}/{{ _libvirt_prefix }}"
         _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
