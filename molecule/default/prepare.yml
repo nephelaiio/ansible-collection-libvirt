@@ -1,6 +1,6 @@
 ---
 - name: Prepare package repositories
-  hosts: "all:!molecule_pxe"
+  hosts: all
   become: true
   gather_facts: true
   tasks:

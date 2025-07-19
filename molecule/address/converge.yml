@@ -1,6 +1,4 @@
 ---
 - name: Connect to KVM guest
-  hosts: all:!molecule_pxe
-  tasks:
-    - name: Gather facts
-      ansible.builtin.setup:
+  hosts: all
+  tasks: []
