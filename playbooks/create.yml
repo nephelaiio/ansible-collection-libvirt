@@ -204,7 +204,6 @@
                 state: directory
                 mode: "u=rwx,g=rwx,o=rx"
                 owner: "{{ _libvirt_daemon_user }}"
-                group: "{{ _libvirt_daemon_group }}"
               when: not _libvirt_path_query.stat.exists
 
             - name: Create KVM guest disks
@@ -229,7 +228,6 @@
             dest: "{{ guest_disk_path }}"
             state: file
             owner: "{{ _libvirt_daemon_user }}"
-            group: "{{ _libvirt_daemon_group }}"
             mode: "u=rw,g=rw,o=rw"
           become: true
 
@@ -298,7 +296,6 @@
                 dest: "{{ guest_iso }}"
                 state: file
                 owner: "{{ _libvirt_daemon_user }}"
-                group: "{{ _libvirt_daemon_group }}"
                 mode: "u=rw,g=rw,o=rw"
               become: true
 
