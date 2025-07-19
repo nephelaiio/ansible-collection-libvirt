@@ -8,7 +8,7 @@
   tasks:
     - name: Debug vardefs
       ansible.builtin.debug:
-        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_network_.*$') }}"
+        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_netaddrds$') }}"
       vars:
         _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
         _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
@@ -129,6 +129,17 @@
       loop: "{{ groups[libvirt_guests | default('all')] }}"
       delegate_to: "{{ item }}"
       delegate_facts: true
+
+    - name: Override KVM guest configuration settings
+      ansible.builtin.add_host:
+        hostname: "{{ item.name }}"
+        ansible_host: "{{ item.name }}"
+        ansible_user: "{{ _libvirt_guest_user }}"
+        ansible_ssh_private_key_file: "{{ _libvirt_privkey }}"
+        ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+      loop_control:
+        label: "{{ item.name }}"
+      loop: "{{ libvirt_platforms }}"
 
 - name: Create KVM guests
   hosts: "{{ libvirt_guests | default('all') }}"
