@@ -55,6 +55,21 @@
       delegate_to: localhost
       delegate_facts: true
 
+    - name: Validate libvirt platforms
+      ansible.builtin.assert:
+        that:
+          - libvirt_platforms | length > 0
+          - libvirt_platforms | map(attribute='name') | list | unique | length == libvirt_platforms | length
+        fail_msg: "Libvirt platforms must have unique names and cannot be empty."
+
+    - name: Debug libvirt platforms
+      ansible.builtin.debug:
+        var: libvirt_platforms
+
+    - name: Debug libvirt platform targets
+      ansible.builtin.debug:
+        msg: "Instantiating guest {{ inventory_hostname }}"
+
     - name: Set guest facts
       ansible.builtin.set_fact:
         _guest_ipaddr: "{{ hostvars['localhost']['_libvirt_netaddrs'][_platform_index | int] }}"
