@@ -200,6 +200,7 @@
             cmd: "qemu-img create -f qcow2 {{ guest_disk_path }} {{ guest_disk_size }}"
           when: guest_image == ''
           become: true
+          changed_when: true
 
         - name: Manage KVM disk permissions
           ansible.builtin.file:
@@ -290,6 +291,7 @@
             - name: Create KVM guest
               ansible.builtin.command: "virsh -c qemu:///system create {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
               become: "{{ _libvirt_become | bool }}"
+              changed_when: true
 
           always:
             - name: Destroy cloud-init tempdir
@@ -336,6 +338,7 @@
           ansible.builtin.command: "virsh -c qemu:///system start {{ inventory_hostname }}"
           become: "{{ _libvirt_become | bool }}"
           when: inventory_hostname not in _libvirt_guest_list
+          changed_when: true
 
 - name: Build Molecule instance config file
   hosts: localhost
@@ -354,7 +357,7 @@
           user: "{{ _libvirt_guest_user }}"
           identity_file: "{{ _libvirt_privkey }}"
         _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
-        _platform_ipaddrs: "{{ _platform_names | map('extract', hostvars, ['guest_ipaddr'])  }}"
+        _platform_ipaddrs: "{{ _platform_names | map('extract', hostvars, ['guest_ipaddr']) }}"
         _platform_addrs: "{{ _platform_ipaddrs | map('ansible.utils.ipaddr', 'address') | list }}"
         _platform_defaults: "{{ _platform_addrs | map(_format_map, _format_tpl | to_json) | map('from_json') }}"
         _platform_inventory: "{{ libvirt_platforms | zip(_platform_defaults) | map('combine') }}"
