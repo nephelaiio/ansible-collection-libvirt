@@ -297,9 +297,17 @@
                 dest: "{{ libvirt_tmpdir.path }}"
                 state: absent
 
+    - name: Create hostvars directory
+      ansible.builtin.file:
+        dest: "{{ hostvars['localhost']['_libvirt_inventory_path'] }}/host_vars"
+        state: directory
+        mode: "u=rwx,g=rx,o=rx"
+      delegate_to: localhost
+
     - name: Create guest hostvars
-      ansible.builtin.copy:
-        dest: "{{ hostvars['localhost']['_libvirt_inventory_path'] }}/host_vars/{{ inventory_hostname }}.yml"
+      ansible.builtin.blockinfile:
+        path: "{{ hostvars['localhost']['_libvirt_inventory_path'] }}/host_vars/{{ inventory_hostname }}.yml"
+        create: true
         content: |
           ---
           ansible_host: "{{ guest_ipaddr | ansible.utils.ipaddr('address') }}"
