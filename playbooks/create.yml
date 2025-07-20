@@ -128,7 +128,7 @@
       ansible.builtin.set_fact:
         guest_index: "{{ _platform_index }}"
         guest_image: "{{ _platform.image | default('') }}"
-        guest_iso: "{{ _platform.iso | default('') }}"
+        guest_iso: "{{ libvirt_guest_iso | default(_platform.iso) | default('') }}"
         guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
         guest_disk_path: "{{ _libvirt_path }}/{{ _platform.name }}.img"
         guest_disk_size: "{{ _platform.size | default('20G') }}"
@@ -230,7 +230,7 @@
                   when: not guest_iso.stat.exists
 
             - name: Create cloud-init iso
-              when: guest_image != ''
+              when: guest_image != '' and guest_iso == ''
               block:
                 - name: Create cloud-init meta data
                   ansible.builtin.template:
