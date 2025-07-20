@@ -230,7 +230,7 @@
                   when: not guest_iso.stat.exists
 
             - name: Create cloud-init iso
-              when: guest_iso == ''
+              when: guest_image != ''
               block:
                 - name: Create cloud-init meta data
                   ansible.builtin.template:
