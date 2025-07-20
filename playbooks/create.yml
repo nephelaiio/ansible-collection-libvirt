@@ -224,11 +224,12 @@
                 - name: Stat guest iso
                   ansible.builtin.stat:
                     path: "{{ guest_iso }}"
+                  register: _guest_iso_stat
 
                 - name: Fail if guest iso does not exist
                   ansible.builtin.fail:
                     msg: "Guest ISO {{ guest_iso }} does not exist."
-                  when: not guest_iso.stat.exists
+                  when: not _guest_iso_stat.stat.exists
 
             - name: Create cloud-init iso
               when: guest_image != '' and guest_iso == ''
