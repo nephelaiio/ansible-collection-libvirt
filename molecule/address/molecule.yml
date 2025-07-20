@@ -18,12 +18,11 @@ provisioner:
       callbacks_enabled: ansible.posix.profile_tasks
       callback_whitelist: profile_tasks, timer, yaml
   inventory:
-    hosts:
+    group_vars:
       all:
-        vars:
-          libvirt_platforms: "{{ molecule_yml.platforms }}"
-          libvirt_network: libvirt
-          libvirt_address: "172.31.254.1/24"
+        libvirt_platforms: "{{ molecule_yml.platforms }}"
+        libvirt_network: libvirt
+        libvirt_address: "172.31.254.1/24"
 verifier:
   name: ansible
 scenario:
