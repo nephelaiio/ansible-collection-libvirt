@@ -33,6 +33,7 @@
       ansible.builtin.command: "virsh -c qemu:///system destroy {{ item }}"
       become: "{{ _libvirt_become | bool }}"
       loop: "{{ _libvirt_guest_list_active }}"
+      changed_when: true
 
     - name: Query all KVM guests
       ansible.builtin.command: "virsh -c qemu:///system list --all --name"
@@ -50,6 +51,7 @@
       ansible.builtin.command: "virsh -c qemu:///system undefine {{ item }}"
       become: "{{ _libvirt_become | bool }}"
       loop: "{{ _libvirt_guest_list_all }}"
+      changed_when: true
 
     - name: Set disk location facts
       ansible.builtin.set_fact:
