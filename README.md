@@ -82,8 +82,10 @@ where <node_object> follows the following json schema
 
 ## Collection playbooks
 
-- nephelaiio.libvirt.create: Deploy network, storage pool and guests
+- nephelaiio.libvirt.prepare: Configure network and storage pools
+- nephelaiio.libvirt.create: Deploy guests
 - nephelaiio.libvirt.destroy: Destroy guests, network and storage pool
+- nephelaiio.libvirt.debug: Gather debug information about deployed guests
 
 ## Testing
 

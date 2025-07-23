@@ -1,0 +1,155 @@
+---
+- name: Set host facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+
+- name: Gather debug info for KVM guests
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Set platform facts
+      ansible.builtin.set_fact:
+        _guest_index: "{{ _platform_index }}"
+        _guest_disk: "{{ _libvirt_path }}/{{ inventory_hostname }}.img"
+        _guest_nbddisk: "{{ _libvirt_guest_dir }}/{{ inventory_hostname }}.raw"
+        _guest_nbddev: "/dev/nbd{{ _platform_index }}"
+        _guest_nbddir: "{{ _libvirt_guest_dir }}/{{ inventory_hostname }}"
+        _guest_logdir: "{{ _libvirt_logdir }}"
+      vars:
+        _platform_index: "{{ lookup('ansible.utils.index_of', ansible_play_hosts, 'eq', inventory_hostname) }}"
+
+    - name: Collect install logs
+      delegate_to: localhost
+      become: true
+      block:
+        - name: Create logdir
+          ansible.builtin.file:
+            path: "{{ _guest_logdir }}"
+            state: directory
+            owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
+            mode: "u=rwx,g=rx,o="
+          run_once: true
+
+        - name: Load NBD module
+          community.general.modprobe:
+            name: nbd
+            state: present
+
+        - name: Create NBD mount directory
+          ansible.builtin.file:
+            path: "{{ _guest_nbddir }}"
+            state: directory
+            owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
+            mode: "u=rwx,go=rx"
+
+        - name: Disconnect disk image from NBD device
+          ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
+
+        - name: Create libvirt tempdir
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: libvirt
+          register: _libvirt_tmpdir
+          changed_when: false
+
+        - name: Copy disk image to temporary file
+          vars:
+            _temp_disk: "{{ _libvirt_tmpdir.path }}/{{ _guest_disk | basename }}"
+          block:
+            - name: Stop KVM guest
+              ansible.builtin.shell: "virsh -c qemu:///system suspend {{ inventory_hostname }} > /dev/null"
+
+            - name: Copy NBD disk to temp image
+              ansible.builtin.copy:
+                src: "{{ _guest_disk }}"
+                dest: "{{ _temp_disk }}"
+                mode: "o=rw,g=,o="
+                remote_src: true
+
+            - name: Convert NBD disk image to raw format
+              ansible.builtin.command: "qemu-img convert -O raw {{ _temp_disk }} {{ _guest_nbddisk }}"
+
+          always:
+            - name: Destroy libvirt tempdir
+              ansible.builtin.file:
+                dest: "{{ _libvirt_tmpdir.path }}"
+                state: absent
+              changed_when: false
+
+            - name: Resume KVM guest
+              ansible.builtin.command: "virsh -c qemu:///system resume {{ inventory_hostname }}"
+              ignore_errors: true
+
+        - name: Connect disk image to NBD device
+          ansible.builtin.command: "qemu-nbd --format raw --connect {{ _guest_nbddev }} {{ _guest_nbddisk }}"
+
+        - name: Query NBD disk info
+          ansible.builtin.command: "sfdisk --json {{ _guest_nbddev }}"
+          register: _guest_fdisk
+
+        - name: Set debug facts
+          ansible.builtin.set_fact:
+            _nbd_partitions: "{{ _partitions }}"
+            _nbd_partition: "{{ _partitions | sort(attribute='size') | last }}"
+          vars:
+            _data: "{{ _guest_fdisk.stdout | from_json }}"
+            _partitions: "{{ _data.partitiontable.partitions }}"
+
+        - name: Debug NBD disk info
+          ansible.builtin.debug:
+            var: _nbd_partitions
+
+        - name: Mount guest NBD image file
+          block:
+            - name: Mount guest NBD image file (ext4)
+              ansible.posix.mount:
+                path: "{{ _guest_nbddir }}"
+                src: "{{ _nbd_partition.node }}"
+                fstype: ext4
+                state: ephemeral
+
+          rescue:
+            - name: Mount guest NBD image file (xfs)
+              block:
+                - name: Mount guest NBD image file (xfs)
+                  ansible.posix.mount:
+                    path: "{{ _guest_nbddir }}"
+                    src: "{{ _nbd_partition.node }}"
+                    fstype: xfs
+                    state: ephemeral
+
+              rescue:
+                - name: Stop for host with unsupported partition fs
+                  ansible.builtin.meta: end_host
+
+        - name: Debug NBD mount location
+          ansible.builtin.debug:
+            msg: "Mounted NBD partition at {{ _guest_nbddir }}"
+
+        - name: Copy cloud-init log
+          ansible.builtin.copy:
+            src: "{{ log_src }}"
+            dest: "{{ log_dest }}"
+            remote_src: true
+            mode: "uog=rw"
+          vars:
+            log_src: "{{ _guest_nbddir }}/{{ item }}"
+            log_dest: "{{ _guest_logdir }}/{{ inventory_hostname }}.{{ item | basename }}"
+          loop:
+            - "var/lib/cloud/data/status.json"
+            - "var/log/cloud-init.log"
+            - "var/log/cloud-init-output.log"
+            - "var/lib/cloud/instances/{{ inventory_hostname }}/cloud-config.txt"
+            - "var/lib/cloud/instances/{{ inventory_hostname }}/user-data.txt"
+          ignore_errors: true
+
+        - name: Debug cloud-init log location
+          ansible.builtin.debug:
+            msg: "Installation logs for {{ inventory_hostname }} available at {{ _guest_logdir }}"
+
+        - name: Unmount guest NBD image file
+          ansible.posix.mount:
+            path: "{{ _guest_nbddir }}"
+            state: unmounted
+
+        - name: Disconnect disk image from NBD device
+          ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"

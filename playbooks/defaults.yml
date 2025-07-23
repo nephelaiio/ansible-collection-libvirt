@@ -78,6 +78,8 @@
         _libvirt_path: "{{ hostvars['localhost']['_libvirt_path'] }}"
         _libvirt_address: "{{ hostvars['localhost']['_libvirt_address'] }}"
         _libvirt_guest_user: "{{ hostvars['localhost']['_libvirt_guest_user'] }}"
+        _libvirt_guest_dir: "{{ hostvars['localhost']['_libvirt_guest_dir'] }}"
+        _libvirt_logdir: "{{ hostvars['localhost']['_libvirt_logdir'] }}"
         _libvirt_pass: "{{ hostvars['localhost']['_libvirt_pass'] }}"
         _libvirt_privkey: "{{ hostvars['localhost']['_libvirt_privkey'] }}"
         _libvirt_network: "{{ hostvars['localhost']['_libvirt_network'] }}"
