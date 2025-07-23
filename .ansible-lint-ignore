@@ -4,3 +4,5 @@ playbooks/create.yml no-changed-when
 playbooks/create.yml run-once[task]
 playbooks/defaults.yml jinja[invalid]
 playbooks/destroy.yml no-changed-when
+playbooks/debug.yml no-changed-when
+playbooks/debug.yml run-once[task]

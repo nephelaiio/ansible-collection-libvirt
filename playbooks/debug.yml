@@ -43,6 +43,7 @@
 
         - name: Disconnect disk image from NBD device
           ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
+          changed_when: false
 
         - name: Create libvirt tempdir
           ansible.builtin.tempfile:
@@ -67,6 +68,7 @@
 
             - name: Convert NBD disk image to raw format
               ansible.builtin.command: "qemu-img convert -O raw {{ _temp_disk }} {{ _guest_nbddisk }}"
+              changed_when: true
 
           always:
             - name: Destroy libvirt tempdir
@@ -77,14 +79,17 @@
 
             - name: Resume KVM guest
               ansible.builtin.command: "virsh -c qemu:///system resume {{ inventory_hostname }}"
-              ignore_errors: true
+              failed_when: false
+              changed_when: true
 
         - name: Connect disk image to NBD device
           ansible.builtin.command: "qemu-nbd --format raw --connect {{ _guest_nbddev }} {{ _guest_nbddisk }}"
+          changed_when: true
 
         - name: Query NBD disk info
           ansible.builtin.command: "sfdisk --json {{ _guest_nbddev }}"
           register: _guest_fdisk
+          changed_when: false
 
         - name: Set debug facts
           ansible.builtin.set_fact:
@@ -140,7 +145,7 @@
             - "var/log/cloud-init-output.log"
             - "var/lib/cloud/instances/{{ inventory_hostname }}/cloud-config.txt"
             - "var/lib/cloud/instances/{{ inventory_hostname }}/user-data.txt"
-          ignore_errors: true
+          failed_when: false
 
         - name: Debug cloud-init log location
           ansible.builtin.debug:
@@ -153,3 +158,4 @@
 
         - name: Disconnect disk image from NBD device
           ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
+          changed_when: false
