@@ -64,6 +64,7 @@
     - name: Debug libvirt platforms
       ansible.builtin.debug:
         var: libvirt_platforms
+      run_once: true
 
     - name: Debug libvirt platform targets
       ansible.builtin.debug:
