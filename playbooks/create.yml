@@ -49,6 +49,12 @@
       ansible.builtin.debug:
         msg: "{{ platform_image_uncached }}"
 
+    - name: Create libvirt path
+      ansible.builtin.file:
+        dest: "{{ _libvirt_path }}"
+        state: directory
+        mode: "u=rwx,g=rx,o=rx"
+
     - name: Cache platform images
       ansible.builtin.get_url:
         url: "{{ item.url }}"
