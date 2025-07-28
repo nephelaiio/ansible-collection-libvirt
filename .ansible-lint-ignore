@@ -1,8 +1,4 @@
 # This file contains ignores rule violations for ansible-lint
-playbooks/create.yml ignore-errors
-playbooks/create.yml no-changed-when
 playbooks/create.yml run-once[task]
-playbooks/defaults.yml jinja[invalid]
-playbooks/destroy.yml no-changed-when
-playbooks/debug.yml no-changed-when
+playbooks/defaults.yml run-once[task]
 playbooks/debug.yml run-once[task]
