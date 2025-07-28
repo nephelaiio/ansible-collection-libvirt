@@ -97,6 +97,7 @@
             - name: Destroy active libvirt network
               ansible.builtin.command: "virsh -c qemu:///system net-destroy {{ _libvirt_network }}"
               become: "{{ _libvirt_become | bool }}"
+              changed_when: true
 
             - name: Query inactive KVM networks
               ansible.builtin.command: "virsh -c qemu:///system net-list --name --inactive"
@@ -107,6 +108,7 @@
             - name: Undefine inactive libvirt network
               ansible.builtin.command: "virsh -c qemu:///system net-undefine {{ _libvirt_network }}"
               become: "{{ _libvirt_become | bool }}"
+              changed_when: true
 
         - name: Delete host file entries
           ansible.builtin.lineinfile:
@@ -120,6 +122,7 @@
           ansible.builtin.command: "virsh -c qemu:///system pool-list --name"
           register: _pool_query
           become: "{{ _libvirt_become | bool }}"
+          changed_when: false
 
         - name: Delete libvirt pool
           vars:
@@ -129,8 +132,10 @@
               ansible.builtin.command: "virsh -c qemu:///system pool-destroy {{ _libvirt_pool }}"
               become: "{{ _libvirt_become | bool }}"
               when: (_libvirt_pool | trim) in _libvirt_pool_list
+              changed_when: true
 
             - name: Undefine libvirt pool
               ansible.builtin.command: "virsh -c qemu:///system pool-undefine {{ _libvirt_pool }}"
               become: "{{ _libvirt_become | bool }}"
               when: (_libvirt_pool | trim) in _libvirt_pool_list
+              changed_when: true
