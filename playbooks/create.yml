@@ -2,6 +2,9 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
+- name: Prepare hosts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
+
 - name: Configure guests
   hosts: localhost
   connection: local

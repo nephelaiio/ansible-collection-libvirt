@@ -2,7 +2,7 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
-- name: Prepare guest nodes
+- name: Prepare hosts
   ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
 
 - name: Destroy KVM guests

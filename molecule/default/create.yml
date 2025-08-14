@@ -1,6 +1,3 @@
 ---
-- name: Prepare guest nodes
-  ansible.builtin.import_playbook: nephelaiio.libvirt.prepare
-
 - name: Import install playbook
   ansible.builtin.import_playbook: nephelaiio.libvirt.create
