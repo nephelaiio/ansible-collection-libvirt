@@ -35,7 +35,10 @@
           vars:
             _is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
             _is_noble: "{{ ansible_facts['distribution_version'] is version('24.04', '>=') }}"
-            _qemu_efi: "qemu-efi{{ '-aarch64' if (_is_ubuntu and _is_noble) else '' }}"
+            _is_debian: "{{ ansible_facts['distribution'] == 'Debian' }}"
+            _is_trixie: "{{ ansible_facts['distribution_version'] is version('13', '>=') }}"
+            _is_debian_modern: "{{ (_is_ubuntu and _is_noble) or (_is_debian and _is_trixie) }}"
+            _qemu_efi: "qemu-efi{{ '-aarch64' if (_is_debian_modern) else '' }}"
 
         - name: Query user groups
           ansible.builtin.command: "groups {{ _libvirt_daemon_user }}"
