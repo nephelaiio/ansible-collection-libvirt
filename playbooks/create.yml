@@ -25,9 +25,7 @@
     - name: Set image facts
       ansible.builtin.set_fact:
         platform_image_cached: "{{ _cache_query.files | map(attribute='path') }}"
-        platform_image_urls: "{{ _platform_image_defined | map(attribute='image') | unique }}"
-      vars:
-        _platform_image_defined: "{{ libvirt_platforms | selectattr('image', 'defined') }}"
+        platform_image_urls: "{{ libvirt_platforms | selectattr('image', 'defined') | map(attribute='image') | unique }}"
 
     - name: Debug platform urls
       ansible.builtin.debug:
