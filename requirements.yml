@@ -5,3 +5,7 @@ collections:
     source: .
     type: dir
   - name: nephelaiio.plugins
+  - name: ansible.posix
+  - name: ansible.utils
+  - name: community.general
+  - name: community.crypto
