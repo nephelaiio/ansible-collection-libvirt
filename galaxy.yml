@@ -1,7 +1,7 @@
 ---
 namespace: nephelaiio
 name: libvirt
-version: 0.4.9
+version: 0.5.0
 readme: README.md
 authors:
   - Ted Cook <358176+teddyphreak@users.noreply.github.com>
@@ -13,6 +13,10 @@ tags:
   - rke
 dependencies:
   "nephelaiio.plugins": "*"
+  "ansible.posix": "*"
+  "ansible.utils": "*"
+  "community.general": "*"
+  "community.crypto": "*"
 repository: http://github.com/nephelaiio/ansible-collection-libvirt
 documentation: http://github.com/nephelaiio/ansible-collection-libvirt
 homepage: http://github.com/nephelaiio/ansible-collection-libvirt

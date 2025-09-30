@@ -110,15 +110,22 @@ ifeq (login,$(firstword $(MAKECMDGOALS)))
     $(eval $(subst $(space),,$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))):;@:)
 endif
 
-dependency create prepare converge idempotence side-effect verify destroy reset list purge login:
-	rm -rf ansible_collections
-	rm -rf ${HOME}/.ansible/collections/ansible_collections/$(COLLECTION_NAMESPACE)/$(COLLECTION_NAME)
-	ANSIBLE_VERBOSITY=${ANSIBLE_VERBOSITY} \
-	MOLECULE_DEBUG=${MOLECULE_DEBUG} \
-	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
+dependency create prepare converge idempotence side-effect verify destroy cleanup reset list login:
+	rm -rf ansible_collections/
+	find .venv -type d -name ansible_collections | xargs -r -- rm -r
+	MOLECULE_HOME=$$(mktemp -d); \
+	if [ -z "$${CI:-}" ]; then \
+		export MOLECULE_EPHEMERAL_DIR=$$(mktemp -d); \
+	fi; \
+	HOME=$${MOLECULE_HOME} \
+	MOLECULE_REVISION=${MOLECULE_REVISION} \
 	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	LIBVIRT_PURGE=$(PURGE_ARGS) \
-	uv run molecule $@ -s ${MOLECULE_SCENARIO} $(LOGIN_ARGS)
+	MOLECULE_LOGDIR=${MOLECULE_LOGDIR} \
+	uv run dotenv molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}; \
+	if [ -z "$${CI:-}" ]; then \
+		rm -r $${MOLECULE_EPHEMERAL_DIR}; \
+	fi; \
+	rm -r $${MOLECULE_HOME};
 
 ignore:
 	@uv run ansible-lint --generate-ignore
