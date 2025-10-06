@@ -2,11 +2,13 @@
 extends: default
 
 ignore: |
-  roles/
-  *.j2.yml
+  .yamllint
   .devbox/
   .venv/
+  .ansible/
   ansible_collections/
+  roles/
+  *.j2.yml
 
 rules:
   braces:
@@ -18,9 +20,9 @@ rules:
   line-length:
     max: 160
   truthy: disable
+  comments-indentation: false
   comments:
     min-spaces-from-content: 1
-  comments-indentation: false
   octal-values:
     forbid-implicit-octal: true
     forbid-explicit-octal: true
