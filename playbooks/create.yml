@@ -84,6 +84,10 @@
   hosts: localhost
   gather_facts: false
   tasks:
+    - name: Checking for SSH keypair
+      ansible.builtin.debug:
+        msg: "Checking for SSH keypair {{ _libvirt_privkey }}"
+
     - name: Stat SSH private key file
       ansible.builtin.stat:
         path: "{{ _libvirt_privkey }}"
@@ -291,10 +295,6 @@
                 dest: "{{ libvirt_tmpdir.path }}/vm.j2.xml"
                 mode: "u=rw,g=r,o="
 
-            - name: Debug KVM guest XML template
-              ansible.builtin.debug:
-                msg: "{{ lookup('ansible.builtin.file', libvirt_tmpdir.path + '/vm.j2.xml') }}"
-
             - name: Create KVM guest
               ansible.builtin.command: "virsh -c qemu:///system define {{ libvirt_tmpdir.path }}/vm.j2.xml --validate"
               become: "{{ _libvirt_become | bool }}"
@@ -377,7 +377,6 @@
           name: instance
 
     - name: Build molecule instance config
-      when: molecule_instance_config is defined
       block:
         - name: Debug instance config
           ansible.builtin.debug:

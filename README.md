@@ -98,7 +98,7 @@ Collection is tested against the following guest OS:
 - Ubuntu Noble
 - Ubuntu Jammy
 - Ubuntu Focal
-- Debian Bookworm
+- Debian 12
 - Alma Linux 9
 - Rocky Linux 9
 

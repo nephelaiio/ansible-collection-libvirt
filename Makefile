@@ -1,13 +1,7 @@
-.PHONY: ${MAKECMDGOALS}
+include .devbox/virtenv/pokerops.ansible-utils.molecule/Makefile
 
-MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
-MAKEFILE_DIR := $(dir $(MAKEFILE_PATH))
-
-MOLECULE_SCENARIO ?= default
-MOLECULE_DEBUG ?=
-ANSIBLE_VERBOSITY ?= 0
 DEBIAN_RELEASE ?= bookworm
-UBUNTU_RELEASE ?= jammy
+UBUNTU_RELEASE ?= noble
 EL_RELEASE ?= 9
 DEBIAN_SHASUMS = https://cloud.debian.org/images/cloud/${DEBIAN_RELEASE}/latest/SHA512SUMS
 DEBIAN_KVM_FILENAME = $$(curl -s ${DEBIAN_SHASUMS} | grep "generic-amd64.qcow2" | awk '{print $$2}')
@@ -16,23 +10,6 @@ UBUNTU_KVM_IMAGE = https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${U
 ALMA_KVM_IMAGE = https://repo.almalinux.org/almalinux/${EL_RELEASE}/cloud/x86_64/images/AlmaLinux-${EL_RELEASE}-GenericCloud-latest.x86_64.qcow2
 ROCKY_KVM_IMAGE = https://dl.rockylinux.org/pub/rocky/${EL_RELEASE}/images/x86_64/Rocky-${EL_RELEASE}-GenericCloud-Base.latest.x86_64.qcow2
 MOLECULE_KVM_IMAGE := $(UBUNTU_KVM_IMAGE)
-GALAXY_API_KEY ?=
-GITHUB_REPOSITORY ?= $$(git config --get remote.origin.url | cut -d':' -f 2 | cut -d. -f 1)
-GITHUB_ORG = $$(echo ${GITHUB_REPOSITORY} | cut -d/ -f 1)
-GITHUB_REPO = $$(echo ${GITHUB_REPOSITORY} | cut -d/ -f 2)
-ROLE_DIR = roles
-ROLE_FILE = roles.yml
-COLLECTION_NAMESPACE = $$(yq '.namespace' < galaxy.yml -r)
-COLLECTION_NAME = $$(yq '.name' < galaxy.yml -r)
-COLLECTION_VERSION = $$(yq '.version' < galaxy.yml -r)
-
-PURGE_ARGS ?= false
-LOGIN_ARGS ?=
-
-all: install version lint test
-
-shell:
-	devbox shell
 
 ubuntu:
 	make create prepare \
@@ -71,75 +48,3 @@ rocky:
 
 rocky9:
 	make rocky EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
-
-test: lint
-	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
-	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	uv run molecule $@ -s ${MOLECULE_SCENARIO}
-
-install:
-	@uv sync
-	@uv run ansible-galaxy collection install \
-		--force --no-deps \
-		.
-
-lint: install
-	uv run yamllint . -c .yamllint
-	ANSIBLE_COLLECTIONS_PATH=$(MAKEFILE_DIR) \
-	uv run ansible-lint -p playbooks/ --exclude "ansible_collections/*"
-
-requirements: install
-	@rm -rf ${ROLE_DIR}/*
-	@python --version
-	@if [ -f ${ROLE_FILE} ]; then \
-		uv run ansible-galaxy role install \
-			--force --no-deps \
-			--roles-path ${ROLE_DIR} \
-			--role-file ${ROLE_FILE}; \
-	fi
-
-build: requirements
-	@uv run ansible-galaxy collection build --force
-
-ifeq (purge,$(firstword $(MAKECMDGOALS)))
-	PURGE_ARGS := "true"
-endif
-
-ifeq (login,$(firstword $(MAKECMDGOALS)))
-    LOGIN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-    $(eval $(subst $(space),,$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))):;@:)
-endif
-
-dependency create prepare converge idempotence side-effect verify destroy cleanup reset list login:
-	rm -rf ansible_collections/
-	find .venv -type d -name ansible_collections | xargs -r -- rm -r
-	MOLECULE_HOME=$$(mktemp -d); \
-	if [ -z "$${CI:-}" ]; then \
-		export MOLECULE_EPHEMERAL_DIR=$$(mktemp -d); \
-	fi; \
-	HOME=$${MOLECULE_HOME} \
-	MOLECULE_REVISION=${MOLECULE_REVISION} \
-	MOLECULE_KVM_IMAGE=${MOLECULE_KVM_IMAGE} \
-	MOLECULE_LOGDIR=${MOLECULE_LOGDIR} \
-	uv run dotenv molecule $@ -s ${MOLECULE_SCENARIO} ${LOGIN_ARGS}; \
-	if [ -z "$${CI:-}" ]; then \
-		rm -r $${MOLECULE_EPHEMERAL_DIR}; \
-	fi; \
-	rm -r $${MOLECULE_HOME};
-
-ignore:
-	@uv run ansible-lint --generate-ignore
-
-clean: destroy reset
-	rm -rf libvirt
-	@uv env remove $$(which python) >/dev/null 2>&1 || exit 0
-
-publish: build
-	uv run ansible-galaxy collection publish --api-key ${GALAXY_API_KEY} \
-		"${COLLECTION_NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}.tar.gz"
-
-version:
-	@uv run molecule --version
-
-debug: install version
-	@uv export --dev --without-hashes || exit 0
