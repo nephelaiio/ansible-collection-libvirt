@@ -1,4 +1,5 @@
 .ansible/
+.devbox/
 ansible_collections/
 tmp/
 *.tar.gz
