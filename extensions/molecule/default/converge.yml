@@ -1,4 +1,0 @@
----
-- name: Connect to KVM guest
-  hosts: all
-  tasks: []
