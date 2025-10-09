@@ -12,7 +12,7 @@ ROCKY_KVM_IMAGE = https://dl.rockylinux.org/pub/rocky/${EL_RELEASE}/images/x86_6
 MOLECULE_KVM_IMAGE := $(UBUNTU_KVM_IMAGE)
 
 ubuntu:
-	make create prepare \
+	make test \
 		MOLECULE_KVM_IMAGE=${UBUNTU_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -26,7 +26,7 @@ focal ubuntu2004:
 	make ubuntu UBUNTU_RELEASE=focal MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 debian:
-	make create prepare converge \
+	make test \
 		MOLECULE_KVM_IMAGE=${DEBIAN_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -34,7 +34,7 @@ bookworm debian12:
 	make debian MOLECULE_SCENARIO=${MOLECULE_SCENARIO} DEBIAN_RELEASE=bookworm
 
 alma:
-	make create prepare converge \
+	make test \
 		MOLECULE_KVM_IMAGE=${ALMA_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
@@ -42,7 +42,7 @@ alma9:
 	make alma EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
 rocky:
-	make create prepare converge \
+	make test \
 		MOLECULE_KVM_IMAGE=${ROCKY_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
