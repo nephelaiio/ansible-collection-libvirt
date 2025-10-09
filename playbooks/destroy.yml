@@ -139,3 +139,17 @@
               become: "{{ _libvirt_become | bool }}"
               when: (_libvirt_pool | trim) in _libvirt_pool_list
               changed_when: true
+
+- name: Destroy molecule resources
+  hosts: localhost
+  vars:
+    ansible_connection: local
+  tasks:
+    - name: Destroy molecule ephemeral directory
+      ansible.builtin.file:
+        path: "{{ molecule_ephemeral_directory }}"
+        state: absent
+      become: "{{ _libvirt_become | bool }}"
+      when:
+        - molecule_ephemeral_directory is defined
+        - molecule_ephemeral_directory != ''
