@@ -1,6 +1,6 @@
 ---
 - name: Set host facts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
 
 - name: Verify KVM guests
   hosts: all
