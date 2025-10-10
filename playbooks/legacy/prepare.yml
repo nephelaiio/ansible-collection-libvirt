@@ -1,6 +1,6 @@
 ---
 - name: Load collection defaults
-  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
 
 - name: Prepare KVM host
   hosts: localhost

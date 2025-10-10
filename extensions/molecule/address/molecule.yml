@@ -34,8 +34,6 @@ scenario:
     - converge
   destroy_sequence:
     - destroy
-  cleanup_sequence:
-    - cleanup
   test_sequence:
     - destroy
     - dependency
