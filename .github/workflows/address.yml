@@ -1,5 +1,5 @@
 ---
-name: libvirt
+name: address
 
 env:
   DEVBOX_VERSION: ${{ vars.DEVBOX_VERSION }}
@@ -14,20 +14,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  libvirt:
-    name: libvirt
+  address:
+    name: address
     runs-on: libvirt
     strategy:
       matrix:
         os:
           - ubuntu2404
-          - ubuntu2204
-          - ubuntu2004
-          - debian12
-          - alma9
-          - rocky9
         scenario:
-          - legacy
+          - address
     env:
       MOLECULE_LOGDIR: "/tmp/logs"
     steps:
