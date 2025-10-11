@@ -6,3 +6,11 @@
     - _platforms in molecule_yml
   vars:
     _platforms: "platforms"
+
+- name: Delegate to native molecule provisioner
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.create
+  when:
+    - molecule_yml is defined
+    - _platforms not in molecule_yml
+  vars:
+    _platforms: "platforms"
