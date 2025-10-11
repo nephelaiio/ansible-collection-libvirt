@@ -1,5 +1,7 @@
 ---
 name: address
+permissions:
+  contents: read
 
 env:
   DEVBOX_VERSION: ${{ vars.DEVBOX_VERSION }}
