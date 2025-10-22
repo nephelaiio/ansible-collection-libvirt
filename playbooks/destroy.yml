@@ -1,5 +1,5 @@
 ---
-- name: Delegate to legacy molecule provisioner
+- name: Delegate to legacy provisioner
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.destroy
   when:
     - molecule_yml is defined

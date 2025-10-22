@@ -1,6 +1,6 @@
 ---
 - name: Delegate to legacy provisioner
-  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.debug
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.prepare
   when:
     - molecule_yml is defined
     - _platforms in molecule_yml
