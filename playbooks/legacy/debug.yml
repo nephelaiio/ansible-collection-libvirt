@@ -19,6 +19,7 @@
 
     - name: Collect install logs
       delegate_to: localhost
+      any_errors_fatal: true
       become: true
       block:
         - name: Create logdir
@@ -160,3 +161,8 @@
         - name: Disconnect disk image from NBD device
           ansible.builtin.command: "qemu-nbd -d {{ _guest_nbddev }}"
           changed_when: false
+
+      rescue:
+        - name: Debug play failure
+          ansible.builtin.debug:
+            msg: "Ignoring execution errors during libvirt guest debugging"

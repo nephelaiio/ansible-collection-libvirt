@@ -1,4 +1,5 @@
-include .devbox/virtenv/pokerops.ansible-utils.molecule/Makefile
+export
+include ${MAKEFILE}
 
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= noble
