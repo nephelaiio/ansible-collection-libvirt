@@ -17,19 +17,37 @@
       vars:
         _platform_index: "{{ lookup('ansible.utils.index_of', ansible_play_hosts, 'eq', inventory_hostname) }}"
 
+    - name: Create logdir
+      ansible.builtin.file:
+        path: "{{ _guest_logdir }}"
+        state: directory
+        owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
+        mode: "u=rwx,g=rx,o="
+      delegate_to: localhost
+      run_once: true
+      become: true
+
+    - name: Take console screenshot
+      delegate_to: localhost
+      any_errors_fatal: true
+      become: true
+      block:
+        - name: Capture guest console screenshot
+          ansible.builtin.command: >
+            virsh -c qemu:///system screenshot {{ inventory_hostname }}
+            {{ _guest_logdir }}/{{ inventory_hostname }}.ppm
+          changed_when: true
+
+      rescue:
+        - name: Debug screenshot failure
+          ansible.builtin.debug:
+            msg: "Failed to capture screenshot for {{ inventory_hostname }}"
+
     - name: Collect install logs
       delegate_to: localhost
       any_errors_fatal: true
       become: true
       block:
-        - name: Create logdir
-          ansible.builtin.file:
-            path: "{{ _guest_logdir }}"
-            state: directory
-            owner: "{{ lookup('ansible.builtin.env', 'USER') }}"
-            mode: "u=rwx,g=rx,o="
-          run_once: true
-
         - name: Load NBD module
           community.general.modprobe:
             name: nbd
