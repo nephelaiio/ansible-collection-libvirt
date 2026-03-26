@@ -2,9 +2,6 @@
 - name: Set host facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
 
-- name: Prepare hosts
-  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.prepare
-
 - name: Destroy KVM guests and resources
   hosts: localhost
   vars:
