@@ -36,7 +36,7 @@ jobs:
           run: devbox run -- make requirements ${{ matrix.os }} MOLECULE_LOGDIR=${{ env.MOLECULE_LOGDIR }} MOLECULE_SCENARIO=${{ matrix.scenario }}
 
       - name: Upload install logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: install.${{ matrix.os }}
           path: |
