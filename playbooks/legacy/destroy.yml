@@ -5,75 +5,77 @@
 - name: Prepare hosts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.prepare
 
-- name: Destroy KVM guests
+- name: Destroy KVM guests and resources
   hosts: localhost
   vars:
     ansible_connection: local
   tasks:
-    - name: Debug vardefs
-      ansible.builtin.debug:
-        msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_netaddrs$') }}"
-      vars:
-        _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
-        _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
+    - name: Destroy KVM guests
+      block:
+        - name: Debug vardefs
+          ansible.builtin.debug:
+            msg: "{{ _varnames | zip(_varvalues) | map('join', '=') | reject('match', '^_libvirt_netaddrs$') }}"
+          vars:
+            _varnames: "{{ lookup('ansible.builtin.varnames', '^_libvirt_.*$', wantlist=True) }}"
+            _varvalues: "{{ lookup('ansible.builtin.vars', *_varnames) }}"
 
-    - name: Query active KVM guests
-      ansible.builtin.command: "virsh -c qemu:///system list --name --state-running"
-      register: _libvirt_guest_query_active
-      become: "{{ _libvirt_become | bool }}"
-      changed_when: false
+        - name: Query active KVM guests
+          ansible.builtin.command: "virsh -c qemu:///system list --name --state-running"
+          register: _libvirt_guest_query_active
+          become: "{{ _libvirt_become | bool }}"
+          changed_when: false
 
-    - name: List active KVM guests
-      ansible.builtin.set_fact:
-        _libvirt_guest_list_active: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
-      vars:
-        _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
+        - name: List active KVM guests
+          ansible.builtin.set_fact:
+            _libvirt_guest_list_active: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
+          vars:
+            _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
 
-    - name: Stop KVM guests
-      ansible.builtin.command: "virsh -c qemu:///system destroy {{ item }}"
-      become: "{{ _libvirt_become | bool }}"
-      loop: "{{ _libvirt_guest_list_active }}"
-      changed_when: true
+        - name: Stop KVM guests
+          ansible.builtin.command: "virsh -c qemu:///system destroy {{ item }}"
+          become: "{{ _libvirt_become | bool }}"
+          loop: "{{ _libvirt_guest_list_active }}"
+          changed_when: true
 
-    - name: Query all KVM guests
-      ansible.builtin.command: "virsh -c qemu:///system list --all --name"
-      register: _libvirt_guest_query_all
-      become: "{{ _libvirt_become | bool }}"
-      changed_when: false
+        - name: Query all KVM guests
+          ansible.builtin.command: "virsh -c qemu:///system list --all --name"
+          register: _libvirt_guest_query_all
+          become: "{{ _libvirt_become | bool }}"
+          changed_when: false
 
-    - name: List all KVM guests
-      ansible.builtin.set_fact:
-        _libvirt_guest_list_all: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names_all) }}"
-      vars:
-        _libvirt_guest_names_all: "{{ _libvirt_guest_query_all.stdout_lines | map('trim') | list }}"
+        - name: List all KVM guests
+          ansible.builtin.set_fact:
+            _libvirt_guest_list_all: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names_all) }}"
+          vars:
+            _libvirt_guest_names_all: "{{ _libvirt_guest_query_all.stdout_lines | map('trim') | list }}"
 
-    - name: Undefine inactive KVM guests
-      ansible.builtin.command: "virsh -c qemu:///system undefine {{ item }}"
-      become: "{{ _libvirt_become | bool }}"
-      loop: "{{ _libvirt_guest_list_all }}"
-      changed_when: true
+        - name: Undefine inactive KVM guests
+          ansible.builtin.command: "virsh -c qemu:///system undefine {{ item }}"
+          become: "{{ _libvirt_become | bool }}"
+          loop: "{{ _libvirt_guest_list_all }}"
+          changed_when: true
 
-    - name: Set disk location facts
-      ansible.builtin.set_fact:
-        _libvirt_image_paths: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
-      vars:
-        _basenames: "{{ libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
+        - name: Set disk location facts
+          ansible.builtin.set_fact:
+            _libvirt_image_paths: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
+          vars:
+            _basenames: "{{ libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
 
-    - name: Debug disk location facts
-      ansible.builtin.debug:
-        var: _libvirt_image_paths
+        - name: Debug disk location facts
+          ansible.builtin.debug:
+            var: _libvirt_image_paths
 
-    - name: Delete guest disks
-      ansible.builtin.file:
-        dest: "{{ item }}"
-        state: absent
-      loop: "{{ _libvirt_image_paths }}"
+        - name: Delete guest disks
+          ansible.builtin.file:
+            dest: "{{ item }}"
+            state: absent
+          loop: "{{ _libvirt_image_paths }}"
 
-- name: Destroy KVM resources
-  hosts: localhost
-  vars:
-    ansible_connection: local
-  tasks:
+      rescue:
+        - name: Debug play failure
+          ansible.builtin.debug:
+            msg: "Ignoring execution errors during libvirt guest destruction"
+
     - name: Destroy KVM resources
       when: _libvirt_cleanup | bool
       block:
@@ -140,16 +142,7 @@
               when: (_libvirt_pool | trim) in _libvirt_pool_list
               changed_when: true
 
-- name: Destroy molecule resources
-  hosts: localhost
-  vars:
-    ansible_connection: local
-  tasks:
-    - name: Destroy molecule ephemeral directory
-      ansible.builtin.file:
-        path: "{{ molecule_ephemeral_directory }}"
-        state: absent
-      become: "{{ _libvirt_become | bool }}"
-      when:
-        - molecule_ephemeral_directory is defined
-        - molecule_ephemeral_directory != ''
+      rescue:
+        - name: Debug play failure
+          ansible.builtin.debug:
+            msg: "Ignoring execution errors during libvirt host cleanup"
