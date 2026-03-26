@@ -24,8 +24,7 @@ jobs:
           - ubuntu2204
           - ubuntu2004
           - debian12
-          - alma9
-          - rocky9
+          - alma10
         scenario:
           - legacy
     env:
