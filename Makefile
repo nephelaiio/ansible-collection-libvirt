@@ -3,7 +3,7 @@ include ${MAKEFILE}
 
 DEBIAN_RELEASE ?= bookworm
 UBUNTU_RELEASE ?= noble
-EL_RELEASE ?= 9
+EL_RELEASE ?= 10
 DEBIAN_SHASUMS = https://cloud.debian.org/images/cloud/${DEBIAN_RELEASE}/latest/SHA512SUMS
 DEBIAN_KVM_FILENAME = $$(curl -s ${DEBIAN_SHASUMS} | grep "generic-amd64.qcow2" | awk '{print $$2}')
 DEBIAN_KVM_IMAGE = https://cloud.debian.org/images/cloud/${DEBIAN_RELEASE}/latest/${DEBIAN_KVM_FILENAME}
@@ -39,13 +39,5 @@ alma:
 		MOLECULE_KVM_IMAGE=${ALMA_KVM_IMAGE} \
 		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
 
-alma9:
-	make alma EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
-
-rocky:
-	make test \
-		MOLECULE_KVM_IMAGE=${ROCKY_KVM_IMAGE} \
-		MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
-
-rocky9:
-	make rocky EL_RELEASE=9 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
+alma10:
+	make alma EL_RELEASE=10 MOLECULE_SCENARIO=${MOLECULE_SCENARIO}
