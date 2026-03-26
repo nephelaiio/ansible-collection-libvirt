@@ -41,5 +41,6 @@ jobs:
           name: install.${{ matrix.os }}
           path: |
             ${{ env.MOLECULE_LOGDIR }}/*.log
+            ${{ env.MOLECULE_LOGDIR }}/*.ppm
           if-no-files-found: ignore
         if: always()
