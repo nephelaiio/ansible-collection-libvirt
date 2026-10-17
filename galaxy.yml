@@ -9,6 +9,7 @@ description: Libvirt collection
 license:
   - MIT
 tags:
+  - infrastructure
   - k8s
   - rke
 dependencies:
