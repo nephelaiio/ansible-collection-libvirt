@@ -19,7 +19,7 @@
         _version: "{{ ansible_facts['distribution_version'] }}"
 
     - name: Configure Debian libvirt daemon
-      when: ansible_os_family == 'Debian'
+      when: ansible_facts['os_family'] == 'Debian'
       become: true
       block:
         - name: Install deb package requirements
@@ -67,7 +67,7 @@
     - name: Grant playbook user access to libvirt path
       ansible.posix.acl:
         path: "{{ _libvirt_path }}"
-        entity: "{{ ansible_env.USER }}"
+        entity: "{{ ansible_facts['env']['USER'] }}"
         etype: user
         permissions: rwx
         state: present
