@@ -23,13 +23,13 @@
         - name: Check guest attributes
           ansible.builtin.assert:
             that:
-              - ansible_processor_nproc == (_guest_cpu | int)
+              - ansible_facts['processor_nproc'] == (_guest_cpu | int)
               - (_memtotal_gb | int) == (_guest_mem | int)
             fail_msg: |
-              Expected {{ _guest_cpu }} processors, got {{ ansible_processor_nproc }}
+              Expected {{ _guest_cpu }} processors, got {{ ansible_facts['processor_nproc'] }}
               Expected {{ _guest_mem }}GB memory, got {{ _memtotal_gb }}GB
           vars:
-            _memtotal_gb: "{{ (ansible_memtotal_mb / 1024) | round | int }}"
+            _memtotal_gb: "{{ (ansible_facts['memtotal_mb'] / 1024) | round | int }}"
             _guest_cpu: "{{ _platform.cpu | default(2) }}"
             _guest_mem: "{{ _platform_data.mem | default(2) }}"
             _platform_data: "{{ libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"

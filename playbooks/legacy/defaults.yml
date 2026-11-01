@@ -34,7 +34,7 @@
         _libvirt_netaddrs: "{{ _network_addrusable }}"
         _libvirt_addrnet: "{{ _network_addrnet }}"
       vars:
-        _ansible_os_family: "{{ hostvars['localhost']['ansible_os_family'] }}"
+        _ansible_os_family: "{{ hostvars['localhost']['ansible_facts']['os_family'] }}"
         _project_user: "{{ lookup('ansible.builtin.env', 'USER') }}"
         _project_temp: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
         _project_path: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
