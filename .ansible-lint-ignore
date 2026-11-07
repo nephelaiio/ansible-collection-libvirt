@@ -1,4 +1,0 @@
-# This file contains ignores rule violations for ansible-lint
-playbooks/legacy/create.yml run-once[task]
-playbooks/legacy/defaults.yml run-once[task]
-playbooks/legacy/debug.yml run-once[task]

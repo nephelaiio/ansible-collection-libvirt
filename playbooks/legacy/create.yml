@@ -131,6 +131,7 @@
   hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
   connection: local
+  strategy: linear
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:

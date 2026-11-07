@@ -5,6 +5,7 @@
 - name: Gather debug info for KVM guests
   hosts: all
   gather_facts: false
+  strategy: linear
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:

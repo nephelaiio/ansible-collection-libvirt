@@ -6,6 +6,7 @@
 - name: Set collection facts
   hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
+  strategy: linear
   tasks:
     - name: Verify platform vardef
       ansible.builtin.assert:
