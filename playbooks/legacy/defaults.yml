@@ -6,7 +6,6 @@
 - name: Set collection facts
   hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
-  strategy: linear
   tasks:
     - name: Verify platform vardef
       ansible.builtin.assert:
@@ -62,7 +61,7 @@
           - libvirt_platforms | map(attribute='name') | list | unique | length == libvirt_platforms | length
         fail_msg: "Libvirt platforms must have unique names and cannot be empty."
 
-    - name: Debug libvirt platforms
+    - name: Debug libvirt platforms # noqa: run-once[task]
       ansible.builtin.debug:
         var: libvirt_platforms
       run_once: true
