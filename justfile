@@ -7,10 +7,12 @@ ubuntu release=UBUNTU_RELEASE:
     MOLECULE_KVM_IMAGE="https://cloud-images.ubuntu.com/{{release}}/current/{{release}}-server-cloudimg-amd64.img" \
         {{just_executable()}} --justfile {{justfile()}} test
 
+resolute: (ubuntu "resolute")
 noble: (ubuntu "noble")
 jammy: (ubuntu "jammy")
 focal: (ubuntu "focal")
 
+alias ubuntu2604 := resolute
 alias ubuntu2404 := noble
 alias ubuntu2204 := jammy
 alias ubuntu2004 := focal
