@@ -102,7 +102,7 @@ Collection is tested against the following guest OS:
 - Alma Linux 9
 - Rocky Linux 9
 
-You can test the collection directly from sources using command `make test`
+You can test the collection directly from sources using command `just test`
 
 ## License
 
