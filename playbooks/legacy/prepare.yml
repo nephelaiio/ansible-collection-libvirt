@@ -142,7 +142,7 @@
 
         - name: Set libvirt network facts
           ansible.builtin.set_fact:
-            _libvirt_network_create: "{{ (_libvirt_network_custom | bool) and not (_libvirt_network_exists | bool) }}"
+            _libvirt_network_create: "{{ _libvirt_network_custom and not _libvirt_network_exists }}"
             _libvirt_network_present: "{{ _libvirt_network_exists }}"
             _libvirt_network_inactive: "{{ _libvirt_network_inactive_list is contains(_libvirt_network | trim) }}"
           vars:

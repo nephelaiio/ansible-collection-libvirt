@@ -157,7 +157,7 @@
       vars:
         _guest_address: "{{ _guest_ipaddr }}/{{ _libvirt_prefix }}"
         _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
-        _platform_index: "{{ lookup('ansible.utils.index_of', _platform_names, 'eq', inventory_hostname) }}"
+        _platform_index: "{{ _platform_names.index(inventory_hostname) }}"
         _platform: "{{ libvirt_platforms[_platform_index | int] }}"
 
     - name: Query KVM guests # noqa: run-once[task]
