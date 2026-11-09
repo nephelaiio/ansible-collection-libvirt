@@ -15,7 +15,7 @@
         _guest_nbddir: "{{ _libvirt_guest_dir }}/{{ inventory_hostname }}"
         _guest_logdir: "{{ _libvirt_logdir }}"
       vars:
-        _platform_index: "{{ lookup('ansible.utils.index_of', ansible_play_hosts, 'eq', inventory_hostname) }}"
+        _platform_index: "{{ ansible_play_hosts.index(inventory_hostname) }}"
 
     - name: Create logdir # noqa: run-once[task]
       ansible.builtin.file:

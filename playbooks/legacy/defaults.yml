@@ -89,4 +89,4 @@
         _libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('90') }}"
       vars:
         _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
-        _platform_index: "{{ lookup('ansible.utils.index_of', _platform_names, 'eq', inventory_hostname) }}"
+        _platform_index: "{{ _platform_names.index(inventory_hostname) }}"
