@@ -1,6 +1,12 @@
 ---
-- name: Set host facts
+- name: Validate legacy platform definition
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.verify
+
+- name: Set legacy platform facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
+
+- name: Set collection facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Prepare hosts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.prepare
@@ -134,7 +140,7 @@
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
-        guest_index: "{{ _platform_index }}"
+        guest_index: "{{ _guest_index }}"
         guest_image: "{{ _platform.image | default('') }}"
         guest_iso: "{{ libvirt_guest_iso | default(_platform.iso) | default('') }}"
         guest_dhcp: "{{ _platform.dhcp | default(False) | bool }}"
@@ -156,9 +162,7 @@
         guest_ipaddr: "{{ libvirt_guest_address | default(_platform.ipaddr) | default(_guest_address) }}"
       vars:
         _guest_address: "{{ _guest_ipaddr }}/{{ _libvirt_prefix }}"
-        _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
-        _platform_index: "{{ _platform_names.index(inventory_hostname) }}"
-        _platform: "{{ libvirt_platforms[_platform_index | int] }}"
+        _platform: "{{ libvirt_platforms[_guest_index | int] }}"
 
     - name: Query KVM guests # noqa: run-once[task]
       ansible.builtin.command: virsh -c qemu:///system list --name --all
@@ -335,7 +339,7 @@
     - name: Start KVM guest
       delegate_to: localhost
       block:
-        - name: Query active KVM guests
+        - name: Query active KVM guests # noqa: run-once[task]
           ansible.builtin.command: virsh -c qemu:///system list --name --all --state-running
           run_once: true
           register: _libvirt_guest_query
@@ -368,8 +372,7 @@
           port: 22
           user: "{{ _libvirt_guest_user }}"
           identity_file: "{{ _libvirt_privkey }}"
-        _platform_names: "{{ libvirt_platforms | map(attribute='name') | list }}"
-        _platform_ipaddrs: "{{ _platform_names | map('extract', hostvars, ['guest_ipaddr']) }}"
+        _platform_ipaddrs: "{{ _libvirt_guest_names | map('extract', hostvars, ['guest_ipaddr']) }}"
         _platform_addrs: "{{ _platform_ipaddrs | map('ansible.utils.ipaddr', 'address') | list }}"
         _platform_defaults: "{{ _platform_addrs | map(_format_map, _format_tpl | to_json) | map('from_json') }}"
         _platform_inventory: "{{ libvirt_platforms | zip(_platform_defaults) | map('combine') }}"

@@ -1,0 +1,82 @@
+---
+- name: Set collection facts
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Set host facts
+      ansible.builtin.set_fact:
+        _libvirt_mac_prefix: "52:54:00"
+        _libvirt_network: "{{ _network_name }}"
+        _libvirt_address: "{{ _network_ifaddr }}"
+        _libvirt_prefix: "{{ _network_prefix }}"
+        _libvirt_daemon_user: "{{ _project_user }}"
+        _libvirt_pass: "{{ libvirt_pass | default('molecule') }}"
+        _libvirt_pool: "{{ _pool_name }}"
+        _libvirt_path: "{{ libvirt_path | default(_path_pool) }}"
+        _libvirt_guest_user: "{{ libvirt_user | default('molecule') }}"
+        _libvirt_guest_dir: "{{ _path_pool }}"
+        _libvirt_logdir: "{{ _path_log }}"
+        _libvirt_resolvers: "{{ [libvirt_resolvers | default(['1.1.1.1', '8.8.8.8'])] | flatten }}"
+        _libvirt_privkey: "{{ libvirt_privkey | default(_ssh_privkey) }}"
+        _libvirt_inventory_path: "{{ _project_temp }}/inventory"
+        _libvirt_become: "{{ lookup('ansible.builtin.env', 'CI', default='false') | bool }}"
+        _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
+        _libvirt_netaddrs: "{{ _network_addrusable }}"
+        _libvirt_addrnet: "{{ _network_addrnet }}"
+      vars:
+        _project_user: "{{ lookup('ansible.builtin.env', 'USER') }}"
+        _project_temp: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
+        _project_path: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+        _project_name: "{{ _project_path | basename | replace('_', '-') | replace('.', '-') }}"
+        _pool_name: "{{ libvirt_pool | default(_project_name) }}"
+        _network_name: "{{ libvirt_network | default('molecule') | trim }}"
+        _network_ifaddr: "{{ libvirt_address | default('172.31.252.1/24') }}"
+        _network_prefix: "{{ _network_ifaddr | ansible.utils.ipaddr('prefix') }}"
+        _network_addrnet: "{{ _network_ifaddr | ansible.utils.ipaddr('network') }}"
+        _network_addrnprefix: "{{ _network_addrnet }}/{{ _network_prefix }}"
+        _network_addrrange: "{{ _network_addrnprefix | ansible.utils.usable_range }}"
+        _network_addrfree: "{{ _network_addrrange.usable_ips[1:-1] | difference([_network_ifaddr | ansible.utils.ipaddr('address')]) }}"
+        _network_addrusable: "{{ _network_addrfree | community.general.version_sort }}"
+        _path_pool: "{{ _project_path }}/libvirt/{{ _project_name }}"
+        _path_log: "{{ lookup('ansible.builtin.env', 'MOLECULE_LOGDIR', default=_path_pool + '/logs') }}"
+        _ssh_privkey: "{{ _path_pool }}/id_rsa"
+
+    - name: Validate libvirt guest names
+      ansible.builtin.assert:
+        that:
+          - _libvirt_guest_names is defined
+          - _libvirt_guest_names | length > 0
+          - _libvirt_guest_names | length <= _libvirt_netaddrs | length
+        fail_msg: >-
+          Libvirt guest names must be set by a mode defaults playbook (e.g. nephelaiio.libvirt.legacy.defaults),
+          be non-empty and fit in the {{ _libvirt_netaddrs | length }} usable addresses of {{ _libvirt_address }}
+
+- name: Set guest facts
+  hosts: "{{ libvirt_guests | default('all') }}"
+  gather_facts: false
+  tasks:
+    - name: Validate libvirt guest membership
+      ansible.builtin.assert:
+        that: inventory_hostname in hostvars['localhost']['_libvirt_guest_names']
+        fail_msg: "Host {{ inventory_hostname }} is not a declared libvirt guest"
+
+    - name: Set guest facts
+      ansible.builtin.set_fact:
+        _guest_index: "{{ _platform_index | int }}"
+        _guest_ipaddr: "{{ hostvars['localhost']['_libvirt_netaddrs'][_platform_index | int] }}"
+        _libvirt_become: "{{ hostvars['localhost']['_libvirt_become'] | bool }}"
+        _libvirt_prefix: "{{ hostvars['localhost']['_libvirt_prefix'] }}"
+        _libvirt_daemon_user: "{{ hostvars['localhost']['_libvirt_daemon_user'] }}"
+        _libvirt_path: "{{ hostvars['localhost']['_libvirt_path'] }}"
+        _libvirt_address: "{{ hostvars['localhost']['_libvirt_address'] }}"
+        _libvirt_guest_user: "{{ hostvars['localhost']['_libvirt_guest_user'] }}"
+        _libvirt_guest_dir: "{{ hostvars['localhost']['_libvirt_guest_dir'] }}"
+        _libvirt_logdir: "{{ hostvars['localhost']['_libvirt_logdir'] }}"
+        _libvirt_pass: "{{ hostvars['localhost']['_libvirt_pass'] }}"
+        _libvirt_privkey: "{{ hostvars['localhost']['_libvirt_privkey'] }}"
+        _libvirt_network: "{{ hostvars['localhost']['_libvirt_network'] }}"
+        _libvirt_mac_prefix: "{{ hostvars['localhost']['_libvirt_mac_prefix'] }}"
+        _libvirt_resolvers: "{{ hostvars['localhost']['_libvirt_resolvers'] }}"
+        _libvirt_conn_timeout: "{{ libvirt_conn_timeout | default('90') }}"
+      vars:
+        _platform_index: "{{ hostvars['localhost']['_libvirt_guest_names'].index(inventory_hostname) }}"

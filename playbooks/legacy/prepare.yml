@@ -1,6 +1,12 @@
 ---
-- name: Load collection defaults
+- name: Validate legacy platform definition
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.verify
+
+- name: Set legacy platform facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
+
+- name: Set collection facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Prepare KVM host
   hosts: localhost
