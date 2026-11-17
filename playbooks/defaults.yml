@@ -19,7 +19,7 @@
         _libvirt_resolvers: "{{ [libvirt_resolvers | default(['1.1.1.1', '8.8.8.8'])] | flatten }}"
         _libvirt_privkey: "{{ libvirt_privkey | default(_ssh_privkey) }}"
         _libvirt_inventory_path: "{{ _project_temp }}/inventory"
-        _libvirt_become: "{{ lookup('ansible.builtin.env', 'CI') | default('false') | bool }}"
+        _libvirt_become: "{{ lookup('ansible.builtin.env', 'CI', default='false') | bool }}"
         _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
         _libvirt_netaddrs: "{{ _network_addrusable }}"
         _libvirt_addrnet: "{{ _network_addrnet }}"
