@@ -1,0 +1,13 @@
+---
+- name: Validate legacy platform definition
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate libvirt platform definition
+      ansible.builtin.assert:
+        that:
+          - libvirt_platforms is defined
+          - libvirt_platforms | length > 0
+          - libvirt_platforms | selectattr('name', 'defined') | list | length == libvirt_platforms | length
+          - libvirt_platforms | map(attribute='name') | list | unique | length == libvirt_platforms | length
+        fail_msg: "Libvirt platforms must be defined, non-empty and have unique names"

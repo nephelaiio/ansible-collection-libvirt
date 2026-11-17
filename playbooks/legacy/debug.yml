@@ -1,6 +1,12 @@
 ---
-- name: Set host facts
+- name: Validate legacy platform definition
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.verify
+
+- name: Set legacy platform facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
+
+- name: Set collection facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Gather debug info for KVM guests
   hosts: all
@@ -8,14 +14,11 @@
   tasks:
     - name: Set platform facts
       ansible.builtin.set_fact:
-        _guest_index: "{{ _platform_index }}"
         _guest_disk: "{{ _libvirt_path }}/{{ inventory_hostname }}.img"
         _guest_nbddisk: "{{ _libvirt_guest_dir }}/{{ inventory_hostname }}.raw"
-        _guest_nbddev: "/dev/nbd{{ _platform_index }}"
+        _guest_nbddev: "/dev/nbd{{ _guest_index }}"
         _guest_nbddir: "{{ _libvirt_guest_dir }}/{{ inventory_hostname }}"
         _guest_logdir: "{{ _libvirt_logdir }}"
-      vars:
-        _platform_index: "{{ ansible_play_hosts.index(inventory_hostname) }}"
 
     - name: Create logdir # noqa: run-once[task]
       ansible.builtin.file:

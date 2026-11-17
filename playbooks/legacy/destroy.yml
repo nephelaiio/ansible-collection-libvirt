@@ -1,6 +1,12 @@
 ---
-- name: Set host facts
+- name: Validate legacy platform definition
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.verify
+
+- name: Set legacy platform facts
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.defaults
+
+- name: Set collection facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
 
 - name: Destroy KVM guests and resources
   hosts: localhost
@@ -24,9 +30,9 @@
 
         - name: List active KVM guests
           ansible.builtin.set_fact:
-            _libvirt_guest_list_active: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names) }}"
+            _libvirt_guest_list_active: "{{ _libvirt_guest_names | intersect(_libvirt_guest_names_active) }}"
           vars:
-            _libvirt_guest_names: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
+            _libvirt_guest_names_active: "{{ _libvirt_guest_query_active.stdout_lines | map('trim') | list }}"
 
         - name: Stop KVM guests
           ansible.builtin.command: "virsh -c qemu:///system destroy {{ item }}"
@@ -42,7 +48,7 @@
 
         - name: List all KVM guests
           ansible.builtin.set_fact:
-            _libvirt_guest_list_all: "{{ libvirt_platforms | map(attribute='name') | intersect(_libvirt_guest_names_all) }}"
+            _libvirt_guest_list_all: "{{ _libvirt_guest_names | intersect(_libvirt_guest_names_all) }}"
           vars:
             _libvirt_guest_names_all: "{{ _libvirt_guest_query_all.stdout_lines | map('trim') | list }}"
 
@@ -56,7 +62,7 @@
           ansible.builtin.set_fact:
             _libvirt_image_paths: "{{ [_libvirt_path] | product(_basenames) | map('join', '/') }}"
           vars:
-            _basenames: "{{ libvirt_platforms | map(attribute='name') | product(['img', 'iso']) | map('join', '.') }}"
+            _basenames: "{{ _libvirt_guest_names | product(['img', 'iso']) | map('join', '.') }}"
 
         - name: Debug disk location facts
           ansible.builtin.debug:
@@ -114,7 +120,7 @@
             path: /etc/hosts
             regexp: ".*{{ item }}.*"
             state: absent
-          loop: "{{ libvirt_platforms | map(attribute='name') }}"
+          loop: "{{ _libvirt_guest_names }}"
           become: true
 
         - name: Query libvirt pools
