@@ -1,0 +1,11 @@
+---
+- name: Prepare package repositories
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Update apt repos
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+      changed_when: false

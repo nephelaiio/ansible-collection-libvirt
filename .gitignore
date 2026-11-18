@@ -3,3 +3,4 @@
 ansible_collections/
 tmp/
 *.tar.gz
+extensions/molecule/*/inventory/nephelaiio.libvirt.yml

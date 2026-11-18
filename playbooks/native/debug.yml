@@ -1,0 +1,12 @@
+---
+- name: Validate native platform definition
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.verify
+
+- name: Set native platform facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.defaults
+
+- name: Set collection facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+
+- name: Gather debug info for KVM guests
+  ansible.builtin.import_playbook: nephelaiio.libvirt.common.debug

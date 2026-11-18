@@ -30,6 +30,7 @@ jobs:
           - alma10
         scenario:
           - legacy
+          - native
     env:
       MOLECULE_LOGDIR: "/tmp/logs"
     steps:

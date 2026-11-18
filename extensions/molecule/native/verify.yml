@@ -1,0 +1,43 @@
+---
+- name: Validate native platform definition
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.verify
+
+- name: Set native platform facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.defaults
+
+- name: Set collection facts
+  ansible.builtin.import_playbook: nephelaiio.libvirt.defaults
+
+- name: Verify KVM guests
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Verify KVM guest attributes
+      block:
+        - name: Gather facts
+          ansible.builtin.setup:
+          ignore_unreachable: true
+          register: _setup
+
+        - name: Check guest status
+          ansible.builtin.assert:
+            that: _unreachable not in _setup
+            fail_msg: "Host is unreachable"
+          vars:
+            _unreachable: unreachable
+
+        - name: Check guest attributes
+          ansible.builtin.assert:
+            that:
+              - ansible_facts['processor_nproc'] == (_guest_cpu | int)
+              - (_memtotal_gb | int) == (_guest_mem | int)
+            fail_msg: |
+              Expected {{ _guest_cpu }} processors, got {{ ansible_facts['processor_nproc'] }}
+              Expected {{ _guest_mem }}GB memory, got {{ _memtotal_gb }}GB
+          vars:
+            _memtotal_gb: "{{ (ansible_facts['memtotal_mb'] / 1024) | round | int }}"
+            _guest_cpu: "{{ _guest_platform.cpu | default(2) }}"
+            _guest_mem: "{{ _guest_platform.mem | default(2) }}"
+
+- name: Debug KVM guests
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.debug

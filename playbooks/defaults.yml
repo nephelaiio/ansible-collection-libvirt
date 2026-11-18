@@ -18,7 +18,7 @@
         _libvirt_logdir: "{{ _path_log }}"
         _libvirt_resolvers: "{{ [libvirt_resolvers | default(['1.1.1.1', '8.8.8.8'])] | flatten }}"
         _libvirt_privkey: "{{ libvirt_privkey | default(_ssh_privkey) }}"
-        _libvirt_inventory_path: "{{ _project_temp }}/inventory"
+        _libvirt_inventory_path: "{{ _libvirt_guest_inventory_path | default(_project_temp + '/inventory') }}"
         _libvirt_become: "{{ lookup('ansible.builtin.env', 'CI', default='false') | bool }}"
         _libvirt_cleanup: "{{ libvirt_cleanup | default(True) }}"
         _libvirt_netaddrs: "{{ _network_addrusable }}"
@@ -51,6 +51,15 @@
           Libvirt guest names must be set by a mode defaults playbook (e.g. nephelaiio.libvirt.legacy.defaults),
           be non-empty and fit in the {{ _libvirt_netaddrs | length }} usable addresses of {{ _libvirt_address }}
 
+    - name: Validate libvirt guest platforms
+      ansible.builtin.assert:
+        that:
+          - _libvirt_guest_platforms is defined
+          - _libvirt_guest_platforms | map(attribute='name') | list == _libvirt_guest_names
+        fail_msg: >-
+          Libvirt guest platforms must be set by a mode defaults playbook (e.g. nephelaiio.libvirt.legacy.defaults)
+          and match libvirt guest names
+
 - name: Set guest facts
   hosts: "{{ libvirt_guests | default('all') }}"
   gather_facts: false
@@ -63,6 +72,7 @@
     - name: Set guest facts
       ansible.builtin.set_fact:
         _guest_index: "{{ _platform_index | int }}"
+        _guest_platform: "{{ hostvars['localhost']['_libvirt_guest_platforms'][_platform_index | int] }}"
         _guest_ipaddr: "{{ hostvars['localhost']['_libvirt_netaddrs'][_platform_index | int] }}"
         _libvirt_become: "{{ hostvars['localhost']['_libvirt_become'] | bool }}"
         _libvirt_prefix: "{{ hostvars['localhost']['_libvirt_prefix'] }}"

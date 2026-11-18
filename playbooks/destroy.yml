@@ -2,3 +2,7 @@
 - name: Delegate to legacy provisioner
   ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.destroy
   when: molecule_yml.platforms | default([]) | length > 0
+
+- name: Delegate to native provisioner
+  ansible.builtin.import_playbook: nephelaiio.libvirt.native.destroy
+  when: molecule_yml.platforms | default([]) | length == 0

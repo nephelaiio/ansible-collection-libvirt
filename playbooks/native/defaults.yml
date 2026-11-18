@@ -1,0 +1,32 @@
+---
+- name: Set native platform facts
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Set libvirt guest names
+      ansible.builtin.set_fact:
+        _libvirt_guest_names: "{{ groups[libvirt_guests | default('all')] | default([]) | reject('equalto', 'localhost') | list }}"
+        _libvirt_guest_platforms: []
+
+    - name: Set libvirt guest inventory path
+      ansible.builtin.set_fact:
+        _libvirt_guest_inventory_path: "{{ _inventory_dir }}"
+      vars:
+        _inventory_dir: "{{ hostvars[_libvirt_guest_names | first]['inventory_dir'] }}"
+      when: _inventory_dir in ansible_inventory_sources
+
+    - name: Set libvirt guest platforms
+      ansible.builtin.set_fact:
+        _libvirt_guest_platforms: "{{ _libvirt_guest_platforms + [_platform | dict2items | rejectattr('value', 'none') | items2dict] }}"
+      loop: "{{ _libvirt_guest_names }}"
+      vars:
+        _host: "{{ hostvars[item] }}"
+        _platform:
+          name: "{{ item }}"
+          image: "{{ _host['libvirt_guest_image'] | default(None) }}"
+          iso: "{{ _host['libvirt_guest_iso'] | default(None) }}"
+          dhcp: "{{ _host['libvirt_guest_dhcp'] | default(None) }}"
+          size: "{{ _host['libvirt_guest_size'] | default(None) }}"
+          mem: "{{ _host['libvirt_guest_mem'] | default(None) }}"
+          cpu: "{{ _host['libvirt_guest_cpu'] | default(None) }}"
+          dns: "{{ _host['libvirt_guest_dns'] | default(None) }}"
