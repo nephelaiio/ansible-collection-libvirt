@@ -36,9 +36,8 @@
               Expected {{ _guest_mem }}GB memory, got {{ _memtotal_gb }}GB
           vars:
             _memtotal_gb: "{{ (ansible_facts['memtotal_mb'] / 1024) | round | int }}"
-            _guest_cpu: "{{ _platform.cpu | default(2) }}"
-            _guest_mem: "{{ _platform_data.mem | default(2) }}"
-            _platform_data: "{{ libvirt_platforms | selectattr('name', 'equalto', inventory_hostname) | first }}"
+            _guest_cpu: "{{ _guest_platform.cpu | default(2) }}"
+            _guest_mem: "{{ _guest_platform.mem | default(2) }}"
 
 - name: Debug KVM guests
-  ansible.builtin.import_playbook: nephelaiio.libvirt.debug
+  ansible.builtin.import_playbook: nephelaiio.libvirt.legacy.debug

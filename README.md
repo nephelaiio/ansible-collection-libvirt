@@ -80,6 +80,53 @@ where <node_object> follows the following json schema
 
 ```
 
+## Provisioning modes
+
+The collection playbooks select a provisioning mode from the Molecule configuration:
+
+- **legacy**: used when `molecule.yml` declares `platforms`. Guests are defined by the `libvirt_platforms` list (see above).
+- **native**: used when `molecule.yml` declares no `platforms`, as in Molecule's ansible-native configuration. Guests are the hosts of the `libvirt_guests` inventory group, configured through host or group variables.
+
+Mode specific playbooks can also be imported directly as `nephelaiio.libvirt.legacy.<playbook>` and `nephelaiio.libvirt.native.<playbook>`.
+
+### Native mode guest variables
+
+| Parameter           |                   Default | Description                | Required |
+| :------------------ | ------------------------: | :------------------------- | :------- |
+| libvirt_guest_image |                        '' | Guest image url            | false    |
+| libvirt_guest_iso   |                        '' | Guest install iso path     | false    |
+| libvirt_guest_dhcp  |                     False | Use dhcp for guest network | false    |
+| libvirt_guest_mem   |                         2 | Guest memory (GB)          | false    |
+| libvirt_guest_cpu   |                         2 | Guest cpu count            | false    |
+| libvirt_guest_size  |                     '20G' | Guest disk size            | false    |
+| libvirt_guest_dns   | '{{ libvirt_resolvers }}' | Guest dns resolvers        | false    |
+
+`libvirt_platforms` must not be set in native mode. A minimal ansible-native `molecule.yml` passes its inventory through the executor arguments:
+
+```yaml
+ansible:
+  executor:
+    args:
+      ansible_playbook:
+        - --inventory=${MOLECULE_SCENARIO_DIRECTORY}/inventory/
+```
+
+with an `inventory/hosts.yml` such as
+
+```yaml
+all:
+  vars:
+    libvirt_guest_image: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+  hosts:
+    guest-01:
+    guest-02:
+      libvirt_guest_mem: 4
+```
+
+The inventory path should be absolute: Molecule runs playbooks from the scenario directory, but resolves inventory for `molecule list` and `molecule login` from the directory it was invoked in.
+
+When the guests are defined in a directory inventory source, `nephelaiio.libvirt.create` writes their connection settings to `nephelaiio.libvirt.yml` in that directory, so that `molecule login` and `molecule list` can reach them, and `nephelaiio.libvirt.destroy` removes it. Otherwise the file is written to the Molecule ephemeral inventory. See `extensions/molecule/native` for a complete scenario.
+
 ## Collection playbooks
 
 - nephelaiio.libvirt.prepare: Configure network and storage pools
@@ -91,16 +138,18 @@ where <node_object> follows the following json schema
 
 Collection is tested against the following host OS:
 
+- Ubuntu Resolute
 - Ubuntu Noble
 
 Collection is tested against the following guest OS:
 
+- Ubuntu Resolute
 - Ubuntu Noble
 - Ubuntu Jammy
 - Ubuntu Focal
+- Debian 13
 - Debian 12
-- Alma Linux 9
-- Rocky Linux 9
+- Alma Linux 10
 
 You can test the collection directly from sources using command `just test`
 

@@ -1,0 +1,16 @@
+---
+- name: Validate native platform definition
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate libvirt guest inventory
+      ansible.builtin.assert:
+        that:
+          - libvirt_platforms is not defined
+          - _guests | length > 0
+        fail_msg: >-
+          Native mode guests must be declared as hosts of inventory group '{{ _group }}'
+          and libvirt_platforms must not be set
+      vars:
+        _group: "{{ libvirt_guests | default('all') }}"
+        _guests: "{{ groups[_group] | default([]) | reject('equalto', 'localhost') | list }}"

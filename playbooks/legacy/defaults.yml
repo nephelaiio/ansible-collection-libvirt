@@ -3,6 +3,9 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Set libvirt guest names
+    - name: Set libvirt guest facts
       ansible.builtin.set_fact:
-        _libvirt_guest_names: "{{ libvirt_platforms | default([]) | selectattr('name', 'defined') | map(attribute='name') | list }}"
+        _libvirt_guest_names: "{{ _platforms | map(attribute='name') | list }}"
+        _libvirt_guest_platforms: "{{ _platforms }}"
+      vars:
+        _platforms: "{{ libvirt_platforms | default([]) | selectattr('name', 'defined') | list }}"
